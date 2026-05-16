@@ -65,7 +65,7 @@ import {
   ChevronUp,
   Gift as GiftIcon
 } from 'lucide-react';
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI as GoogleGenAI } from "@google/generative-ai";
 
 
 const BUBBLE_PRESETS = [
@@ -2137,7 +2137,7 @@ export default function App() {
   });
   const genAI = useMemo(() => {
     if (!aiSettings.apiKey) return null;
-    return new GoogleGenerativeAI(aiSettings.apiKey); 
+    return new GoogleGenAI(aiSettings.apiKey); 
   }, [aiSettings.apiKey]);
   const [customIcons, setCustomIcons] = useState<Record<string, string>>({});
   const [appNames, setAppNames] = useState<Record<string, string>>({
@@ -4038,7 +4038,6 @@ const GardenApp = ({
 
     setTypingChatId('system');
     try {
-      const gAI = new GoogleGenAI({ apiKey: aiSettings.apiKey || process.env.GEMINI_API_KEY || '' });
       const response = await gAI.models.generateContent({
         model: "gemini-flash-latest",
         contents: currentMessages.map(m => ({ role: m.role, parts: [{ text: m.text }] })),
