@@ -4025,7 +4025,6 @@ const GardenApp = ({
   }, [messages, characters, selectedChatId]);
 
 const handleSendMessage = async (text?: string | string[]) => {
-  // 檢查頂部的 genAI 是否存在
   if (!genAI) {
     setMessages(prev => [...prev, { role: 'model', text: "請先至「設定 > AI 助手」輸入 API 金鑰才能開始聊天喔！" }]);
     return;
@@ -4044,15 +4043,16 @@ const handleSendMessage = async (text?: string | string[]) => {
   setTypingChatId('system');
 
   try {
-    // 這裡統統改成 genAI，不要有 gAI
-    const model = genAI.getGenerativeModel({ 
+    // 將變數名稱改為 aiInstance，避免與其他地方的 model 衝突
+    const aiInstance = genAI.getGenerativeModel({ 
       model: aiSettings.model || "gemini-1.5-flash" 
     });
 
-    const model = genAI?.getGenerativeModel({ model: "gemini-1.5-flash" });
-    if (!model) return;
-    const result = await model.generateContent({
-      contents: [{ role: 'user', parts: [{ text: "請直接給出你的朋友圈貼文內容：" }] }],
+    const result = await aiInstance.generateContent({
+      contents: currentMessages.map(m => ({ 
+        role: m.role === 'model' ? 'model' : 'user', 
+        parts: [{ text: m.text }] 
+      }))
     });
 
     const responseText = result.response.text();
@@ -4067,13 +4067,18 @@ const handleSendMessage = async (text?: string | string[]) => {
     }
   } catch (error: any) {
     console.error("AI Error:", error);
-    // 這裡的報錯文字也修掉，避免誤導
-    setMessages(prev => [...prev, { role: 'model', text: "機器人似乎遇到了問題，請檢查 API Key 或網路。錯誤訊息：" + error.message }]);
+    setMessages(prev => [...prev, { role: 'model', text: "機器人似乎遇到了問題，錯誤訊息：" + error.message }]);
   } finally {
     setTypingChatId(null);
   }
 };
-  const handleCharacterChat = async (character: Character, text: string | string[]) => {
+const handleCharacterChat = async (character: Character, text: string | string[]) => {
+    // 1. 檢查由設定頁面產生的 genAI 實例是否存在
+    if (!genAI) {
+      setCharacters(prev => prev.map(c => c.id === character.id ? { ...c, messages: [...c.messages, { role: 'model', text: "請先至「設定 > AI 助手」輸入 API 金鑰。" }] } : c));
+      return;
+    }
+
     const textArray = typeof text === 'string' ? [text.trim()] : text.filter(t => t.trim());
     if (textArray.length === 0) return;
 
@@ -4127,20 +4132,30 @@ ${memoContext}${replyContext}${walletContext}
 6. 自然地使用語助詞，口語化。
 請以這個角色的口吻和使用者對話。使用者姓名是 ${userProfile.name}。`;
 
-      const gAI = new GoogleGenAI({ apiKey: aiSettings.apiKey || process.env.GEMINI_API_KEY || '' });
-      const response = await gAI.models.generateContent({
-        model: "gemini-flash-latest",
-        contents: currentHistory.map(m => ({ role: m.role, parts: [{ text: m.text }] })),
-        config: { systemInstruction: systemPrompt }
+      // --- 修改開始：改用組件頂部的 genAI，並修正呼叫方式 ---
+      const aiModel = genAI.getGenerativeModel({ 
+        model: aiSettings.model || "gemini-1.5-flash",
+        systemInstruction: systemPrompt 
       });
 
-      // Increase favorability slightly on each successful interaction (randomly between 1-5, no limit)
+      const chatSession = aiModel.startChat({
+        history: character.messages.map(m => ({ 
+          role: m.role === 'model' ? 'model' : 'user', 
+          parts: [{ text: m.text }] 
+        })),
+      });
+
+      const result = await chatSession.sendMessage(textArray.join('\n'));
+      const responseText = result.response.text();
+      // --- 修改結束 ---
+
+      // Increase favorability slightly on each successful interaction
       setCharacters(prev => prev.map(c => 
         c.id === character.id ? { ...c, favorability: (c.favorability || 0) + (Math.floor(Math.random() * 5) + 1) } : c
       ));
 
-      if (response.text) {
-        const fullSentences = response.text.split(/([。！？\n])/).reduce((acc: string[], val, i) => {
+      if (responseText) {
+        const fullSentences = responseText.split(/([。！？\n])/).reduce((acc: string[], val, i) => {
           if (i % 2 === 0) acc.push(val);
           else if (acc.length > 0) acc[acc.length - 1] += val;
           return acc;
@@ -4181,7 +4196,6 @@ ${memoContext}${replyContext}${walletContext}
         for (let i = 0; i < sentences.length; i++) {
           setTypingChatId(character.id);
           
-          // Initial delay for the first message, staggered for subsequent ones
           const waitTime = i === 0 
             ? minDelay + Math.random() * (maxDelay - minDelay)
             : 500 + Math.random() * 1000; 
@@ -4189,7 +4203,6 @@ ${memoContext}${replyContext}${walletContext}
           await new Promise(r => setTimeout(r, waitTime));
           
           const sentence = sentences[i].trim();
-          let processedChar = character;
 
           if (sentence.includes('[贈送禮物]')) {
             const match = sentence.match(/\[贈送禮物\]\s*([^ \n\r\t]+)/);
@@ -4284,10 +4297,10 @@ ${memoContext}${replyContext}${walletContext}
           }));
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
       setCharacters(prev => prev.map(c => 
-        c.id === character.id ? { ...c, messages: [...c.messages, { role: 'model', text: "系統異常：" + (error instanceof Error ? error.message : "") }] } : c
+        c.id === character.id ? { ...c, messages: [...c.messages, { role: 'model', text: "系統異常：" + error.message }] } : c
       ));
     } finally { setTypingChatId(null); }
   };
