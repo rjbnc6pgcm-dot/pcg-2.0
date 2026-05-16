@@ -2133,7 +2133,7 @@ export default function App() {
   });
   const [aiSettings, setAiSettings] = useState<AISettings>({ 
     apiKey: '', 
-    model: 'gemini-1.5-flash' 
+    model: 'gemini-1.5-flash-latest' 
   });
   const genAI = useMemo(() => {
     if (!aiSettings.apiKey) return null;
@@ -2621,7 +2621,7 @@ const GameApp = ({ characters, userProfile, isDarkMode, goHome, aiSettings, wall
 長度約10-20個字。保持口吻。`;
     
     try {
-      const model = genAI.getGenerativeModel({ model: aiSettings.model });
+      const model = genAI.getGenerativeModel({ model: aiSettings.model.trim() });
       const result = await model.generateContent({
         contents: [{ role: 'user', parts: [{ text: "請描述題目：" }] }],
         config: { 
