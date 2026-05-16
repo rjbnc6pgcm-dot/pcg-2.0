@@ -2132,9 +2132,13 @@ export default function App() {
     signature: '今天也是美好的一天' 
   });
   const [aiSettings, setAiSettings] = useState<AISettings>({ 
-    apiKey: process.env.GEMINI_API_KEY || '', 
-    model: 'gemini-flash-latest' 
+    apiKey: '', 
+    model: 'gemini-1.5-flash' 
   });
+  const genAI = useMemo(() => {
+    if (!aiSettings.apiKey) return null;
+    return new GoogleGenerativeAI(aiSettings.apiKey); 
+  }, [aiSettings.apiKey]);
   const [customIcons, setCustomIcons] = useState<Record<string, string>>({});
   const [appNames, setAppNames] = useState<Record<string, string>>({
     messages: '訊息',
@@ -6829,5 +6833,3 @@ const AppIcon = ({ id, label, color, icon, isDarkMode, isJiggling, customSrc, on
     )}
   </div>
 );
-
-
