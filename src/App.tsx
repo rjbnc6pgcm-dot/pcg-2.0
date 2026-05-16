@@ -323,7 +323,11 @@ interface MomentPost { id: string; groupId: string; authorId: string; text: stri
 interface ReceivedGift { id: string; giftId: string; senderId: string; senderName: string; timestamp: number; }
 interface Memo { id: string; text: string; completed: boolean; }
 interface UserProfile { name: string; age: string; gender: string; avatar: string; signature: string; walletBalance?: number; }
-interface AISettings { apiKey: string; model: string; }
+interface AISettings {
+  apiKey: string;
+  model: string;
+  baseUrl: string; // 新增這一行，讓程式知道有「網址」這個欄位
+}
 
 // Game Types
 type GameType = 'uno' | 'oldmaid' | 'charades';
@@ -2131,14 +2135,54 @@ export default function App() {
     avatar: '🥕',
     signature: '今天也是美好的一天' 
   });
-  const [aiSettings, setAiSettings] = useState<AISettings>({ 
+const [aiSettings, setAiSettings] = useState<AISettings>({ 
     apiKey: '', 
-    model: 'gemini-1.5-flash-latest' 
+    model: 'gemini-1.5-flash', 
+    baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/' // 預設給一個網址
   });
+
+  // --- 這裡開始是新增的萬用連接器 ---
+  const callUniversalAI = async (history: Message[], systemPrompt: string) => {
+    if (!aiSettings.apiKey) return "請輸入 API Key";
+    
+    const cleanBaseUrl = aiSettings.baseUrl.replace(/\/$/, '');
+    const url = cleanBaseUrl.endsWith('/chat/completions') ? cleanBaseUrl : `${cleanBaseUrl}/chat/completions`;
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${aiSettings.apiKey}`
+      },
+      body: JSON.stringify({
+        model: aiSettings.model,
+        messages: [
+          { role: "system", content: systemPrompt },
+          ...history.map(m => ({
+            role: m.role === 'model' ? 'assistant' : 'user',
+            content: m.text
+          }))
+        ],
+        temperature: 0.7,
+      })
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.error?.message || `連線失敗 ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.choices[0].message.content;
+  };
+  // --- 新增結束 ---
+
+  // 你原本的 genAI 可以保留（或者刪除，因為萬用版不需要它了）
   const genAI = useMemo(() => {
     if (!aiSettings.apiKey) return null;
     return new GoogleGenAI(aiSettings.apiKey); 
   }, [aiSettings.apiKey]);
+
   const [customIcons, setCustomIcons] = useState<Record<string, string>>({});
   const [appNames, setAppNames] = useState<Record<string, string>>({
     messages: '訊息',
@@ -4025,57 +4069,55 @@ const GardenApp = ({
   }, [messages, characters, selectedChatId]);
 
 const handleSendMessage = async (text?: string | string[]) => {
-  if (!genAI) {
-    setMessages(prev => [...prev, { role: 'model', text: "請先至「設定 > AI 助手」輸入 API 金鑰才能開始聊天喔！" }]);
-    return;
-  }
-
-  const textArray = typeof text === 'string' ? [text.trim()] : (text ? text.filter(t => t.trim()) : [input.trim()]);
-  if (textArray.length === 0) return;
-
-  const userMsgs: Message[] = textArray.map(t => ({ role: 'user', text: t }));
-  const currentMessages = [...messages, ...userMsgs];
-  setMessages(currentMessages);
-  
-  if (typeof text === 'string' || !text) setInput('');
-  else setStackedMessages([]);
-
-  setTypingChatId('system');
-
-  try {
-    // 將變數名稱改為 aiInstance，避免與其他地方的 model 衝突
-    const aiInstance = genAI.getGenerativeModel({ 
-      model: aiSettings.model || "gemini-1.5-flash" 
-    });
-
-    const result = await aiInstance.generateContent({
-      contents: currentMessages.map(m => ({ 
-        role: m.role === 'model' ? 'model' : 'user', 
-        parts: [{ text: m.text }] 
-      }))
-    });
-
-    const responseText = result.response.text();
-    
-    if (responseText) {
-      const sentences = responseText.split(/([。！？\n])/).filter(s => s.trim().length > 0);
-      for (const sentence of sentences) {
-        setTypingChatId('system');
-        await new Promise(r => setTimeout(r, 600 + Math.random() * 800));
-        setMessages(prev => [...prev, { role: 'model', text: sentence.trim() }]);
-      }
+    // 檢查 API 設定
+    if (!aiSettings.apiKey || !aiSettings.baseUrl) {
+      setMessages(prev => [...prev, { role: 'model', text: "請先至「設定 > AI 助手」輸入 API 金鑰與地址才能開始聊天喔！" }]);
+      return;
     }
-  } catch (error: any) {
-    console.error("AI Error:", error);
-    setMessages(prev => [...prev, { role: 'model', text: "機器人似乎遇到了問題，錯誤訊息：" + error.message }]);
-  } finally {
-    setTypingChatId(null);
-  }
-};
-const handleCharacterChat = async (character: Character, text: string | string[]) => {
-    // 1. 檢查由設定頁面產生的 genAI 實例是否存在
-    if (!genAI) {
-      setCharacters(prev => prev.map(c => c.id === character.id ? { ...c, messages: [...c.messages, { role: 'model', text: "請先至「設定 > AI 助手」輸入 API 金鑰。" }] } : c));
+
+    const textArray = typeof text === 'string' ? [text.trim()] : (text ? text.filter(t => t.trim()) : [input.trim()]);
+    if (textArray.length === 0) return;
+
+    const userMsgs: Message[] = textArray.map(t => ({ role: 'user', text: t }));
+    const currentMessages = [...messages, ...userMsgs];
+    setMessages(currentMessages);
+    
+    if (typeof text === 'string' || !text) setInput('');
+    else setStackedMessages([]);
+
+    setTypingChatId('system');
+
+    try {
+      const systemPrompt = `你是一個住在 iPhone 裡的 AI 助手。你的回覆風格：1. 像真人一樣說話，口語化、親切。2. 保持簡潔，盡量使用短句。目前使用者姓名是 ${userProfile.name}。`;
+      
+      // --- 改用通用呼叫 ---
+      const responseText = await callUniversalAI(currentMessages, systemPrompt);
+      
+      if (responseText) {
+        const sentences = responseText.split(/([。！？\n])/).reduce((acc: string[], val, i) => {
+          if (i % 2 === 0) acc.push(val);
+          else if (acc.length > 0) acc[acc.length - 1] += val;
+          return acc;
+        }, []).filter(s => s.trim().length > 0);
+
+        for (const sentence of sentences) {
+          setTypingChatId('system');
+          await new Promise(r => setTimeout(r, 600 + Math.random() * 800));
+          setMessages(prev => [...prev, { role: 'model', text: sentence.trim() }]);
+        }
+      }
+    } catch (error: any) {
+      console.error("AI Error:", error);
+      setMessages(prev => [...prev, { role: 'model', text: "機器人連線失敗：" + error.message }]);
+    } finally {
+      setTypingChatId(null);
+    }
+  };
+
+  const handleCharacterChat = async (character: Character, text: string | string[]) => {
+    // 檢查 API 設定
+    if (!aiSettings.apiKey || !aiSettings.baseUrl) {
+      setCharacters(prev => prev.map(c => c.id === character.id ? { ...c, messages: [...c.messages, { role: 'model', text: "請先至設定輸入 API 金鑰與地址。" }] } : c));
       return;
     }
 
@@ -4091,14 +4133,14 @@ const handleCharacterChat = async (character: Character, text: string | string[]
 
     const uncompletedMemos = (character.memos || []).filter(m => !m.completed).map(m => m.text);
     const memoContext = uncompletedMemos.length > 0 
-      ? `\n\n注意：使用者目前有以下「待辦備忘錄」尚未完成：\n${uncompletedMemos.map(t => `- ${t}`).join('\n')}\n請你在對話中「自然且符合你設定的語氣和性格」地適時提醒或關心使用者這些事情的進度，不要太刻意，要像朋友或伴侶間的閒聊提醒。`
+      ? `\n\n注意：使用者目前有以下「待辦備忘錄」尚未完成：\n${uncompletedMemos.map(t => `- ${t}`).join('\n')}\n請你在對話中「自然且符合你設定的語氣和性格」地適時提醒或關心使用者這些事情的進度。`
       : "";
     
-    const replyContext = replyingTo ? `\n\n使用者現在「標註」並回覆了你之前的一條訊息：\n「${replyingTo.text}」\n請你在回覆時，針對這條被標註的訊息進行回話。` : "";
+    const replyContext = replyingTo ? `\n\n使用者現在「標註」並回覆了你之前的一條訊息：\n「${replyingTo.text}」\n請針對此訊息進行回話。` : "";
 
     const userText = typeof text === 'string' ? text : text.join(' ');
     const mentionsGift = userText.includes('禮物') || userText.includes('送我');
-    const walletContext = mentionsGift ? `\n\n目前你的錢包裡有 $${character.walletBalance || 0}。如果你想買禮物送給使用者，請在回覆訊息的開頭加上「[贈送禮物] <禮物名稱> <圖標>」。可選清單：${POSSIBLE_GIFTS.filter(g => g.price <= (character.walletBalance || 0)).map(g => `${g.name}(${g.price})`).join(', ')}。購買後會自動扣除對應金額。` : "";
+    const walletContext = mentionsGift ? `\n\n目前你的錢包裡有 $${character.walletBalance || 0}。如果你想買禮物送給使用者，請在回覆訊息的開頭加上「[贈送禮物] <禮物名稱> <圖標>」。` : "";
 
     setCharacters(prev => prev.map(c => 
       c.id === character.id ? { ...c, messages: currentHistory, lastInteractionTime: Date.now() } : c
@@ -4107,7 +4149,6 @@ const handleCharacterChat = async (character: Character, text: string | string[]
     if (typeof text === 'string') setInput('');
     else setStackedMessages([]);
     setReplyingTo(null);
-
     setTypingChatId(character.id);
 
     try {
@@ -4120,36 +4161,15 @@ const handleCharacterChat = async (character: Character, text: string | string[]
 個性：${character.personality}
 習性：${character.habits}
 對話風格：${character.customPrompt || '無'}
-好感度：${character.favorability} (好感度越高，說話語氣可以越親暱)
+好感度：${character.favorability}
 ${memoContext}${replyContext}${walletContext}
 
-對話風格要求：
-1. 嚴格遵守角色設定的性格和說話方式，特別是「對話風格」的設定。
-2. 妳對使用者的暱稱必須是「${character.userNickname || userProfile.name}」。
-3. 妳與使用者的關係是「${character.relationship || '陌生人'}」，請根據此關係調整語態。
-4. 像在通訊軟體聊天一樣，多用短句。
-5. 避免長篇大論，盡量分段表達。
-6. 自然地使用語助詞，口語化。
-請以這個角色的口吻和使用者對話。使用者姓名是 ${userProfile.name}。`;
+要求：1. 遵守性格。2. 暱稱是「${character.userNickname || userProfile.name}」。3. 多用短句。`;
 
-      // --- 修改開始：改用組件頂部的 genAI，並修正呼叫方式 ---
-      const aiModel = genAI.getGenerativeModel({ 
-        model: aiSettings.model || "gemini-1.5-flash",
-        systemInstruction: systemPrompt 
-      });
+      // --- 改用通用呼叫 ---
+      const responseText = await callUniversalAI(currentHistory, systemPrompt);
 
-      const chatSession = aiModel.startChat({
-        history: character.messages.map(m => ({ 
-          role: m.role === 'model' ? 'model' : 'user', 
-          parts: [{ text: m.text }] 
-        })),
-      });
-
-      const result = await chatSession.sendMessage(textArray.join('\n'));
-      const responseText = result.response.text();
-      // --- 修改結束 ---
-
-      // Increase favorability slightly on each successful interaction
+      // 每次互動增加好感度
       setCharacters(prev => prev.map(c => 
         c.id === character.id ? { ...c, favorability: (c.favorability || 0) + (Math.floor(Math.random() * 5) + 1) } : c
       ));
@@ -4161,7 +4181,6 @@ ${memoContext}${replyContext}${walletContext}
           return acc;
         }, []).filter(s => s.trim().length > 0);
 
-        // Respect maxMessagesPerTurn
         let sentences = fullSentences.slice(0, character.maxMessagesPerTurn || 3);
 
         const applyRandomFeatures = () => {
@@ -4169,12 +4188,10 @@ ${memoContext}${replyContext}${walletContext}
             const amount = Math.floor(Math.random() * (character.walletBalance || 0)) + 1;
             sentences.push(`[轉帳給使用者] ${amount}`);
           }
-
           if (character.canUseStickers && Math.random() < 0.5 && stickers.length > 0) {
             const randomSticker = stickers[Math.floor(Math.random() * stickers.length)];
             sentences.push(`[貼圖] ${randomSticker}`);
           }
-
           if (character.canSendGifts && Math.random() < 0.3) {
             const availableGifts = dailyStoreItems.gifts.map(dg => POSSIBLE_GIFTS.find(g => g.id === dg.id)).filter(Boolean) as Gift[];
             const affordableGifts = availableGifts.filter(g => g.price <= (character.walletBalance || 0));
@@ -4183,7 +4200,6 @@ ${memoContext}${replyContext}${walletContext}
               sentences.push(`[贈送禮物] ${gift.name}`);
             }
           }
-
           if (character.canPat && Math.random() < 0.3) {
             sentences.push(`[拍一拍] 角色${character.name}拍了拍你的頭。`);
           }
@@ -4195,15 +4211,12 @@ ${memoContext}${replyContext}${walletContext}
 
         for (let i = 0; i < sentences.length; i++) {
           setTypingChatId(character.id);
-          
-          const waitTime = i === 0 
-            ? minDelay + Math.random() * (maxDelay - minDelay)
-            : 500 + Math.random() * 1000; 
-
+          const waitTime = i === 0 ? minDelay + Math.random() * (maxDelay - minDelay) : 500 + Math.random() * 1000; 
           await new Promise(r => setTimeout(r, waitTime));
           
           const sentence = sentences[i].trim();
 
+          // 以下保留你所有的[贈送禮物]、[轉帳]解析邏輯
           if (sentence.includes('[贈送禮物]')) {
             const match = sentence.match(/\[贈送禮物\]\s*([^ \n\r\t]+)/);
             if (match) {
@@ -4240,14 +4253,13 @@ ${memoContext}${replyContext}${walletContext}
                   const gift = POSSIBLE_GIFTS.find(g => g.name === giftName || giftName.includes(g.name));
                   if (gift && newBalance >= gift.price) {
                     newBalance -= gift.price;
-                    const charTx: Transaction = {
-                      id: Date.now().toString() + 'cgx' + Math.random().toString(36).substr(2, 5),
+                    newTransactions = [{
+                      id: Date.now().toString() + Math.random(),
                       type: 'expense',
                       amount: gift.price,
                       title: `購買 ${gift.name} 贈送給 ${userProfile.name}`,
-                      timestamp: new Date().toLocaleString('zh-TW', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
-                    };
-                    newTransactions = [charTx, ...newTransactions];
+                      timestamp: new Date().toLocaleString()
+                    }, ...newTransactions];
                   }
                 }
               } else if (isTransfer) {
@@ -4256,41 +4268,26 @@ ${memoContext}${replyContext}${walletContext}
                   const amount = parseInt(match[1]);
                   if (newBalance >= amount) {
                     newBalance -= amount;
-                    const charTx: Transaction = {
-                      id: Date.now().toString() + 'ctx' + Math.random().toString(36).substr(2, 5),
+                    newTransactions = [{
+                      id: Date.now().toString() + Math.random(),
                       type: 'transfer',
                       amount: amount,
                       title: `轉帳給 ${userProfile.name}`,
-                      timestamp: new Date().toLocaleString('zh-TW', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
-                    };
-                    newTransactions = [charTx, ...newTransactions];
+                      timestamp: new Date().toLocaleString()
+                    }, ...newTransactions];
                   }
                 }
               }
 
               let finalSentence = sentence;
-              if (isTransfer) {
-                const match = sentence.match(/\[轉帳給使用者\]\s*(\d+)/);
-                if (match) {
-                  const amount = parseInt(match[1]);
-                  finalSentence = `\u200B[轉帳] 角色${c.name}轉帳$${amount}，請查收。`;
-                }
-              } else if (isGift) {
-                const match = sentence.match(/\[贈送禮物\]\s*([^ \n\r\t]+)/);
-                if (match) {
-                   finalSentence = `\u200B[贈禮] 角色${c.name}贈送禮物${match[1]}，請查收。`;
-                }
-              }
+              if (isTransfer) finalSentence = `\u200B[轉帳] 角色${c.name}轉帳$${sentence.match(/\d+/)?.[0]}，請查收。`;
+              else if (isGift) finalSentence = `\u200B[贈禮] 角色${c.name}贈送禮物${sentence.match(/\[贈送禮物\]\s*([^ \n\r\t]+)/)?.[1]}，請查收。`;
 
               return { 
                 ...c, 
                 walletBalance: newBalance,
                 transactions: newTransactions,
-                messages: [...c.messages, { 
-                  id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
-                  role: 'model', 
-                  text: finalSentence
-                }] 
+                messages: [...c.messages, { id: Date.now().toString() + Math.random(), role: 'model', text: finalSentence }] 
               };
             }
             return c;
@@ -4299,12 +4296,9 @@ ${memoContext}${replyContext}${walletContext}
       }
     } catch (error: any) {
       console.error(error);
-      setCharacters(prev => prev.map(c => 
-        c.id === character.id ? { ...c, messages: [...c.messages, { role: 'model', text: "系統異常：" + error.message }] } : c
-      ));
+      setCharacters(prev => prev.map(c => c.id === character.id ? { ...c, messages: [...c.messages, { role: 'model', text: "系統連線異常：" + error.message }] } : c));
     } finally { setTypingChatId(null); }
   };
-
   const openApp = (app: AppId) => {
     if (isJiggling) return;
     setActiveApp(app);
