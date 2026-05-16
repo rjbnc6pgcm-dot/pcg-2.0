@@ -3887,6 +3887,7 @@ const GardenApp = ({
   }, []);
 
   // Load from LocalStorage
+// Load from LocalStorage
   useEffect(() => {
     try {
       const saved = localStorage.getItem('ais_app_data');
@@ -3898,6 +3899,16 @@ const GardenApp = ({
         if (data.lockWallpaper) setLockWallpaper(data.lockWallpaper);
         if (data.homeWallpaper) setHomeWallpaper(data.homeWallpaper);
         if (data.customIcons) setCustomIcons(data.customIcons);
+        
+        // --- 新增：讀取萬用 AI 設定 ---
+        if (data.aiSettings) {
+          setAiSettings({
+            apiKey: data.aiSettings.apiKey || '',
+            model: data.aiSettings.model || 'gemini-1.5-flash',
+            baseUrl: data.aiSettings.baseUrl || 'https://generativelanguage.googleapis.com/v1beta/openai/'
+          });
+        }
+
         if (data.installedApps) {
           let apps = data.installedApps.filter((a: string) => a !== 'beautify' && a !== 'phone');
           if (!apps.includes('wheel')) apps.push('wheel');
@@ -4006,6 +4017,7 @@ const GardenApp = ({
   }, [isLoaded]);
 
   // Save to LocalStorage
+// Save to LocalStorage
   useEffect(() => {
     if (!isLoaded) return;
     const data = {
@@ -4034,7 +4046,8 @@ const GardenApp = ({
       momentGroups,
       momentPosts,
       receivedGifts,
-      letters
+      letters,
+      aiSettings // 👈 確保這一行有在這裡！
     };
     localStorage.setItem('ais_app_data', JSON.stringify(data));
   }, [
@@ -4061,7 +4074,8 @@ const GardenApp = ({
     momentGroups,
     momentPosts,
     receivedGifts,
-    letters
+    letters,
+    aiSettings // 👈 還有這裡也要加！
   ]);
 
   useEffect(() => {
@@ -4408,56 +4422,78 @@ ${memoContext}${replyContext}${walletContext}
   };
 
   const renderSettings = () => {
-    if (settingsSubPage === 'ai-config' as any) return (
+if (settingsSubPage === 'ai-config' as any) return (
       <div className={`flex-1 ${isDarkMode ? 'bg-black text-white' : 'bg-[#f2f2f7] text-black'} overflow-y-auto`}>
-        <Header title="AI 助手設定" onBack={() => setSettingsSubPage('main')} isDarkMode={isDarkMode} />
+        <Header title="AI 助手與 API 設定" onBack={() => setSettingsSubPage('main')} isDarkMode={isDarkMode} />
         <div className="p-4 space-y-6">
-          <div className={`${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white'} rounded-xl p-4 shadow-sm space-y-4`}>
-            <div>
-              <label className="text-xs font-bold text-neutral-400 block mb-1 uppercase px-1">Gemini API 金鑰</label>
+          <div className={`${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white'} rounded-xl p-5 shadow-sm space-y-5`}>
+            
+            {/* 1. API 地址輸入 */}
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black text-neutral-400 uppercase px-1 tracking-widest">API Endpoint (地址)</label>
+              <input 
+                type="text"
+                className={`w-full text-sm outline-none px-4 py-3 rounded-xl ${isDarkMode ? 'bg-black/40 text-white border border-white/10' : 'bg-neutral-50 text-black border border-neutral-100'}`}
+                value={aiSettings.baseUrl}
+                onChange={e => setAiSettings(p => ({ ...p, baseUrl: e.target.value }))}
+                placeholder="例如: https://api.openai.com/v1"
+              />
+              <p className="text-[9px] opacity-40 px-1 italic">需支援 OpenAI 相容格式。</p>
+            </div>
+
+            {/* 2. API Key 輸入 */}
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black text-neutral-400 uppercase px-1 tracking-widest">API Key (金鑰)</label>
               <input 
                 type="password"
-                className={`w-full text-sm outline-none px-4 py-3 rounded-lg ${isDarkMode ? 'bg-black/40 text-white border border-[#38383a]' : 'bg-neutral-50 text-black border border-neutral-100'}`}
+                className={`w-full text-sm outline-none px-4 py-3 rounded-xl ${isDarkMode ? 'bg-black/40 text-white border border-white/10' : 'bg-neutral-50 text-black border border-neutral-100'}`}
                 value={aiSettings.apiKey}
                 onChange={e => setAiSettings(p => ({ ...p, apiKey: e.target.value }))}
-                placeholder="在此輸入您的 Gemini API Key"
+                placeholder="在此輸入您的 API 金鑰"
               />
-              <p className="text-[10px] text-neutral-400 mt-2 px-1 leading-relaxed">
-                您的 API 金鑰將儲存在此 App 的狀態中。若要獲取金鑰，請訪問 Google AI Studio。
-              </p>
             </div>
             
-            <div className="pt-2">
-              <label className="text-xs font-bold text-neutral-400 block mb-1 uppercase px-1">模型選擇</label>
-              <select 
-                className={`w-full text-sm outline-none px-4 py-3 rounded-lg appearance-none ${isDarkMode ? 'bg-black/40 text-white border border-[#38383a]' : 'bg-neutral-50 text-black border border-neutral-100'}`}
+            {/* 3. 模型名稱手動輸入 (原本是 select，現在改成 input) */}
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black text-neutral-400 uppercase px-1 tracking-widest">模型名稱 (Model Name)</label>
+              <input 
+                type="text"
+                className={`w-full text-sm outline-none px-4 py-3 rounded-xl ${isDarkMode ? 'bg-black/40 text-white border border-white/10' : 'bg-neutral-50 text-black border border-neutral-100'}`}
                 value={aiSettings.model}
                 onChange={e => setAiSettings(p => ({ ...p, model: e.target.value }))}
-              >
-                <option value="gemini-flash-latest">Gemini Flash (快速)</option>
-                <option value="gemini-3.1-pro-preview">Gemini Pro (強大)</option>
-                <option value="gemini-3.1-flash-lite">Gemini Flash Lite (更輕量)</option>
-              </select>
+                placeholder="例如: gpt-4o, deepseek-chat, gemini-1.5-flash"
+              />
             </div>
           </div>
 
+          {/* 狀態顯示 */}
           <div className={`${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white'} rounded-xl p-4 shadow-sm`}>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white">
                 <Bot size={24} />
               </div>
               <div>
-                <h4 className="font-bold text-sm">AI 機器人狀態</h4>
-                <p className={`text-xs ${aiSettings.apiKey ? 'text-green-500' : 'text-neutral-400'}`}>
-                  {aiSettings.apiKey ? '● 已就緒' : '○ 尚未設定'}
+                <h4 className="font-bold text-sm">通用 AI 模式已啟用</h4>
+                <p className={`text-xs ${aiSettings.apiKey && aiSettings.baseUrl ? 'text-green-500' : 'text-orange-400'}`}>
+                  {aiSettings.apiKey && aiSettings.baseUrl ? '● 設定已完成' : '○ 尚缺網址或金鑰'}
                 </p>
               </div>
+            </div>
+          </div>
+
+          {/* 快速參考提示 */}
+          <div className={`p-4 rounded-2xl ${isDarkMode ? 'bg-blue-500/10' : 'bg-blue-50'} space-y-2`}>
+            <h4 className="text-xs font-bold text-blue-500 flex items-center gap-1">
+              <Info size={14} /> 常用廠商填寫參考
+            </h4>
+            <div className="text-[9px] text-blue-500/70 leading-relaxed">
+              <p>• <b>Google Gemini</b>: <br/>網址: <code>https://generativelanguage.googleapis.com/v1beta/openai/</code><br/>模型: <code>gemini-1.5-flash</code></p>
+              <p className="mt-2">• <b>DeepSeek</b>: <br/>網址: <code>https://api.deepseek.com</code><br/>模型: <code>deepseek-chat</code></p>
             </div>
           </div>
         </div>
       </div>
     );
-
     if (settingsSubPage === 'profile') return (
       <div className={`flex-1 ${isDarkMode ? 'bg-black text-white' : 'bg-[#f2f2f7] text-black'} overflow-y-auto`}>
         <Header title="個人資料" onBack={() => setSettingsSubPage('main')} isDarkMode={isDarkMode} />
