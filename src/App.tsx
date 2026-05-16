@@ -2141,7 +2141,56 @@ const [aiSettings, setAiSettings] = useState<AISettings>({
     baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/' // 預設給一個網址
   });
 
-  // --- 這裡開始是新增的萬用連接器 ---
+  // --- 新增：模型列表狀態 ---
+  const [availableModels, setAvailableModels] = useState<string[]>([]);
+  const [isFetchingModels, setIsFetchingModels] = useState(false);
+
+  // --- 新增：自動抓取模型清單的函式 ---
+  const fetchModels = async () => {
+    if (!aiSettings.apiKey || !aiSettings.baseUrl) {
+      alert("請先輸入 API Key 與 Endpoint 網址");
+      return;
+    }
+
+    setIsFetchingModels(true);
+    try {
+      // 處理網址：將結尾的 /chat/completions 去掉，換成 /models
+      const baseUrl = aiSettings.baseUrl.trim().replace(/\/$/, '').replace(/\/chat\/completions$/, '');
+      const url = `${baseUrl}/models`;
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${aiSettings.apiKey}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error?.message || `HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      // 解析 OpenAI 規格的模型清單
+      const modelIds = data.data.map((m: any) => m.id);
+      setAvailableModels(modelIds);
+      
+      // 如果目前的模型不在清單中，自動選第一個
+      if (modelIds.length > 0 && !modelIds.includes(aiSettings.model)) {
+        setAiSettings(prev => ({ ...prev, model: modelIds[0] }));
+      }
+      
+      alert(`成功抓取 ${modelIds.length} 個模型！`);
+    } catch (err: any) {
+      console.error("Fetch models failed:", err);
+      alert("抓取失敗，請確認網址與 Key 是否正確。\n錯誤：" + err.message);
+    } finally {
+      setIsFetchingModels(false);
+    }
+  };
+
+  // --- 這裡是你原本的萬用連接器 (保持不變) ---
   const callUniversalAI = async (history: Message[], systemPrompt: string) => {
     if (!aiSettings.apiKey) return "請輸入 API Key";
     
@@ -2175,7 +2224,6 @@ const [aiSettings, setAiSettings] = useState<AISettings>({
     const data = await response.json();
     return data.choices[0].message.content;
   };
-  // --- 新增結束 ---
 
   // 你原本的 genAI 可以保留（或者刪除，因為萬用版不需要它了）
   const genAI = useMemo(() => {
@@ -3886,7 +3934,6 @@ const GardenApp = ({
     return () => clearInterval(timer);
   }, []);
 
-  // Load from LocalStorage
 // Load from LocalStorage
   useEffect(() => {
     try {
@@ -3900,7 +3947,7 @@ const GardenApp = ({
         if (data.homeWallpaper) setHomeWallpaper(data.homeWallpaper);
         if (data.customIcons) setCustomIcons(data.customIcons);
         
-        // --- 新增：讀取萬用 AI 設定 ---
+        // --- 修正：讀取 AI 設定與抓到的模型清單 ---
         if (data.aiSettings) {
           setAiSettings({
             apiKey: data.aiSettings.apiKey || '',
@@ -3908,6 +3955,7 @@ const GardenApp = ({
             baseUrl: data.aiSettings.baseUrl || 'https://generativelanguage.googleapis.com/v1beta/openai/'
           });
         }
+        if (data.availableModels) setAvailableModels(data.availableModels); // 👈 加入這行
 
         if (data.installedApps) {
           let apps = data.installedApps.filter((a: string) => a !== 'beautify' && a !== 'phone');
@@ -4016,7 +4064,6 @@ const GardenApp = ({
     }));
   }, [isLoaded]);
 
-  // Save to LocalStorage
 // Save to LocalStorage
   useEffect(() => {
     if (!isLoaded) return;
@@ -4047,7 +4094,8 @@ const GardenApp = ({
       momentPosts,
       receivedGifts,
       letters,
-      aiSettings // 👈 確保這一行有在這裡！
+      aiSettings,
+      availableModels // 👈 1. 這裡要存進去
     };
     localStorage.setItem('ais_app_data', JSON.stringify(data));
   }, [
@@ -4075,7 +4123,8 @@ const GardenApp = ({
     momentPosts,
     receivedGifts,
     letters,
-    aiSettings // 👈 還有這裡也要加！
+    aiSettings,
+    availableModels // 👈 2. 這裡也要加，模型清單變動時才會觸發存檔
   ]);
 
   useEffect(() => {
@@ -4453,16 +4502,41 @@ if (settingsSubPage === 'ai-config' as any) return (
               />
             </div>
             
-            {/* 3. 模型名稱手動輸入 (原本是 select，現在改成 input) */}
+            {/* 3. 模型名稱選擇 (優化版：支援自動抓取) */}
             <div className="space-y-1.5">
-              <label className="text-[10px] font-black text-neutral-400 uppercase px-1 tracking-widest">模型名稱 (Model Name)</label>
-              <input 
-                type="text"
-                className={`w-full text-sm outline-none px-4 py-3 rounded-xl ${isDarkMode ? 'bg-black/40 text-white border border-white/10' : 'bg-neutral-50 text-black border border-neutral-100'}`}
-                value={aiSettings.model}
-                onChange={e => setAiSettings(p => ({ ...p, model: e.target.value }))}
-                placeholder="例如: gpt-4o, deepseek-chat, gemini-1.5-flash"
-              />
+              <div className="flex justify-between items-center px-1">
+                <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest">模型名稱 (Model Name)</label>
+                <button 
+                  onClick={fetchModels}
+                  disabled={isFetchingModels}
+                  className="text-[9px] bg-blue-500 hover:bg-blue-600 text-white px-2 py-0.5 rounded font-bold active:scale-95 transition-all disabled:opacity-50"
+                >
+                  {isFetchingModels ? "連線中..." : "↺ 抓取可用清單"}
+                </button>
+              </div>
+
+              {availableModels.length > 0 ? (
+                <div className="relative">
+                  <select 
+                    className={`w-full text-sm outline-none px-4 py-3 rounded-xl appearance-none ${isDarkMode ? 'bg-black/40 text-white border border-white/10' : 'bg-neutral-50 text-black border border-neutral-100'}`}
+                    value={aiSettings.model}
+                    onChange={e => setAiSettings(p => ({ ...p, model: e.target.value }))}
+                  >
+                    {availableModels.map(m => <option key={m} value={m}>{m}</option>)}
+                  </select>
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none opacity-30">
+                    <ChevronDown size={14} />
+                  </div>
+                </div>
+              ) : (
+                <input 
+                  type="text"
+                  className={`w-full text-sm outline-none px-4 py-3 rounded-xl ${isDarkMode ? 'bg-black/40 text-white border border-white/10' : 'bg-neutral-50 text-black border border-neutral-100'}`}
+                  value={aiSettings.model}
+                  onChange={e => setAiSettings(p => ({ ...p, model: e.target.value }))}
+                  placeholder="例如: gpt-4o, llama-3.3-70b-versatile"
+                />
+              )}
             </div>
           </div>
 
@@ -4488,7 +4562,7 @@ if (settingsSubPage === 'ai-config' as any) return (
             </h4>
             <div className="text-[9px] text-blue-500/70 leading-relaxed">
               <p>• <b>Google Gemini</b>: <br/>網址: <code>https://generativelanguage.googleapis.com/v1beta/openai/</code><br/>模型: <code>gemini-1.5-flash</code></p>
-              <p className="mt-2">• <b>DeepSeek</b>: <br/>網址: <code>https://api.deepseek.com</code><br/>模型: <code>deepseek-chat</code></p>
+              <p className="mt-2">• <b>Groq</b>: <br/>網址: <code>https://api.groq.com/openai/v1</code><br/>模型: <code>llama-3.3-70b-versatile</code></p>
             </div>
           </div>
         </div>
