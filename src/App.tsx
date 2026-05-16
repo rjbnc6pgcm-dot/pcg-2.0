@@ -2621,9 +2621,8 @@ const GameApp = ({ characters, userProfile, isDarkMode, goHome, aiSettings, wall
 長度約10-20個字。保持口吻。`;
     
     try {
-      const gAI = new GoogleGenAI({ apiKey: aiSettings.apiKey || process.env.GEMINI_API_KEY || '' });
-      const result = await gAI.models.generateContent({
-        model: aiSettings.model,
+      const model = genAI.getGenerativeModel({ model: aiSettings.model });
+      const result = await model.generateContent({
         contents: [{ role: 'user', parts: [{ text: "請描述題目：" }] }],
         config: { 
           maxOutputTokens: 50,
@@ -4025,50 +4024,55 @@ const GardenApp = ({
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, characters, selectedChatId]);
 
-  const handleSendMessage = async (text?: string | string[]) => {
-    const textArray = typeof text === 'string' ? [text.trim()] : (text ? text.filter(t => t.trim()) : [input.trim()]);
-    if (textArray.length === 0) return;
+const handleSendMessage = async (text?: string | string[]) => {
+  // 檢查頂部的 genAI 是否存在
+  if (!genAI) {
+    setMessages(prev => [...prev, { role: 'model', text: "請先至「設定 > AI 助手」輸入 API 金鑰才能開始聊天喔！" }]);
+    return;
+  }
 
-    const userMsgs: Message[] = textArray.map(t => ({ role: 'user', text: t }));
-    const currentMessages = [...messages, ...userMsgs];
-    setMessages(currentMessages);
+  const textArray = typeof text === 'string' ? [text.trim()] : (text ? text.filter(t => t.trim()) : [input.trim()]);
+  if (textArray.length === 0) return;
+
+  const userMsgs: Message[] = textArray.map(t => ({ role: 'user', text: t }));
+  const currentMessages = [...messages, ...userMsgs];
+  setMessages(currentMessages);
+  
+  if (typeof text === 'string' || !text) setInput('');
+  else setStackedMessages([]);
+
+  setTypingChatId('system');
+
+  try {
+    // 這裡統統改成 genAI，不要有 gAI
+    const model = genAI.getGenerativeModel({ 
+      model: aiSettings.model || "gemini-1.5-flash" 
+    });
+
+    const model = genAI?.getGenerativeModel({ model: "gemini-1.5-flash" });
+    if (!model) return;
+    const result = await model.generateContent({
+      contents: [{ role: 'user', parts: [{ text: "請直接給出你的朋友圈貼文內容：" }] }],
+    });
+
+    const responseText = result.response.text();
     
-    if (typeof text === 'string' || !text) setInput('');
-    else setStackedMessages([]);
-
-    setTypingChatId('system');
-    try {
-      const response = await gAI.models.generateContent({
-        model: "gemini-flash-latest",
-        contents: currentMessages.map(m => ({ role: m.role, parts: [{ text: m.text }] })),
-        config: { systemInstruction: `你是一個住在 iPhone 裡的 AI 助手。
-你的回覆風格：
-1. 像真人一樣說話，口語化、親切、現代且有禮貌。
-2. 保持簡潔，盡量使用短句。
-3. 避免一次輸出大段文字，如果是複雜的回答，請分成多個連貫的小短句。
-目前使用者姓名是 ${userProfile.name}。` }
-      });
-      
-      if (response.text) {
-        // Split by major punctuation while keeping them
-        const sentences = response.text.split(/([。！？\n])/).reduce((acc: string[], val, i) => {
-          if (i % 2 === 0) acc.push(val);
-          else if (acc.length > 0) acc[acc.length - 1] += val;
-          return acc;
-        }, []).filter(s => s.trim().length > 0);
-
-        for (const sentence of sentences) {
-          setTypingChatId('system');
-          await new Promise(r => setTimeout(r, 600 + Math.random() * 800)); // Typing delay
-          setMessages(prev => [...prev, { role: 'model', text: sentence.trim() }]);
-        }
+    if (responseText) {
+      const sentences = responseText.split(/([。！？\n])/).filter(s => s.trim().length > 0);
+      for (const sentence of sentences) {
+        setTypingChatId('system');
+        await new Promise(r => setTimeout(r, 600 + Math.random() * 800));
+        setMessages(prev => [...prev, { role: 'model', text: sentence.trim() }]);
       }
-    } catch (error) {
-      console.error(error);
-      setMessages(prev => [...prev, { role: 'model', text: "機器人似乎遇到了問題，請檢查您的 API 金鑰。 " + (error instanceof Error ? error.message : "") }]);
-    } finally { setTypingChatId(null); }
-  };
-
+    }
+  } catch (error: any) {
+    console.error("AI Error:", error);
+    // 這裡的報錯文字也修掉，避免誤導
+    setMessages(prev => [...prev, { role: 'model', text: "機器人似乎遇到了問題，請檢查 API Key 或網路。錯誤訊息：" + error.message }]);
+  } finally {
+    setTypingChatId(null);
+  }
+};
   const handleCharacterChat = async (character: Character, text: string | string[]) => {
     const textArray = typeof text === 'string' ? [text.trim()] : text.filter(t => t.trim());
     if (textArray.length === 0) return;
