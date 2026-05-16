@@ -65,7 +65,7 @@ import {
   ChevronUp,
   Gift as GiftIcon
 } from 'lucide-react';
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 
 const BUBBLE_PRESETS = [
