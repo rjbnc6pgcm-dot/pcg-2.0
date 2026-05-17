@@ -3557,7 +3557,7 @@ const [userProfile, setUserProfile] = useState<UserProfile>({
         </div>
       </div>
     );
-  };
+};
 
 const renderSettings = () => {
     const t = TRANSLATIONS[language];
