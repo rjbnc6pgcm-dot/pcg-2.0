@@ -3150,8 +3150,7 @@ const [userProfile, setUserProfile] = useState<UserProfile>({
   });
   const [availableModels, setAvailableModels] = useState<string[]>([]);
   const [isFetchingModels, setIsFetchingModels] = useState(false);
-  });
-  
+
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [warehouseItems, setWarehouseItems] = useState<{id: string, amount: number}[]>([]);
   const [gardenPatches, setGardenPatches] = useState<GardenPatch[]>(
