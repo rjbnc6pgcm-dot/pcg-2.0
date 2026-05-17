@@ -3478,41 +3478,6 @@ const [userProfile, setUserProfile] = useState<UserProfile>({
     );
   };
 
-const renderCharacters = () => {
-    // 1. 如果有選中角色 ID，顯示「編輯/詳細資料頁面」
-    if (editingCharId) {
-      const char = characters.find(c => c.id === editingCharId);
-      if (!char) return null;
-      const update = (f: keyof Character, v: any) => setCharacters(prev => prev.map(c => c.id === editingCharId ? { ...c, [f]: v } : c));
-
-      // --- 偷窺者模式分頁 ---
-      if (charTab === 'peeper') {
-        return (
-          <div className={`flex-1 flex flex-col h-full ${isDarkMode ? 'bg-black text-white' : 'bg-[#f2f2f7] text-black'} overflow-y-auto`}>
-            <Header title="偷窺者模式" onBack={() => setCharTab('edit')} isDarkMode={isDarkMode} />
-            <div className="p-6 space-y-6 pb-20">
-              <div className={`p-8 rounded-[40px] text-center space-y-4 ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white shadow-xl'} border ${isDarkMode ? 'border-white/5' : 'border-neutral-100'}`}>
-                <div className="w-20 h-20 rounded-full overflow-hidden mx-auto border-4 border-[#5856D6] shadow-lg">
-                  <AvatarImage src={char.avatar} />
-                </div>
-                <h4 className="font-black text-xl">{char.name} 的隱私錢包</h4>
-                <div className="text-5xl font-black text-[#5856D6] tracking-tighter">${char.walletBalance || 0}</div>
-                <p className="text-[10px] font-bold opacity-30 uppercase tracking-widest">Authorized Access Only</p>
-              </div>
-              <div className="space-y-3">
-                <h5 className="text-xs font-bold opacity-40 uppercase px-2">近期動態紀錄</h5>
-                <div className={`rounded-2xl p-4 space-y-3 ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white shadow-sm'}`}>
-                  {char.activityLogs?.map((log, i) => (
-                    <div key={i} className="text-xs opacity-70 border-l-2 border-[#76DE84] pl-3 py-1">{log}</div>
-                  ))}
-                  {(!char.activityLogs || char.activityLogs.length === 0) && <p className="text-center opacity-30 py-4 italic">暫無紀錄</p>}
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-      }
-
       // --- 編輯角色分頁 ---
       return (
         <div className={`flex-1 flex flex-col h-full ${isDarkMode ? 'bg-black text-white' : 'bg-[#f2f2f7] text-black'} overflow-y-auto pb-20`}>
@@ -3779,120 +3744,88 @@ const renderSettings = () => {
   };
 
 const renderCharacters = () => {
-    // 如果有選中角色，則顯示「編輯頁面」
     if (editingCharId) {
       const char = characters.find(c => c.id === editingCharId);
       if (!char) return null;
-      
-      const updateChar = (field: keyof Character, value: any) => {
-        setCharacters(prev => prev.map(c => c.id === editingCharId ? { ...c, [field]: value } : c));
-      };
+      const update = (f: keyof Character, v: any) => setCharacters(prev => prev.map(c => c.id === editingCharId ? { ...c, [f]: v } : c));
+
+      if (charTab === 'peeper') {
+        return (
+          <div className={`flex-1 flex flex-col h-full ${isDarkMode ? 'bg-black text-white' : 'bg-[#f2f2f7] text-black'} overflow-y-auto`}>
+            <Header title="偷窺者模式" onBack={() => setCharTab('edit')} isDarkMode={isDarkMode} />
+            <div className="p-6 space-y-6 pb-20">
+              <div className={`p-8 rounded-[40px] text-center space-y-4 ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white shadow-xl'} border ${isDarkMode ? 'border-white/5' : 'border-neutral-100'}`}>
+                <div className="w-20 h-20 rounded-full overflow-hidden mx-auto border-4 border-[#5856D6] shadow-lg">
+                  <AvatarImage src={char.avatar} />
+                </div>
+                <h4 className="font-black text-xl">{char.name} 的隱私錢包</h4>
+                <div className="text-5xl font-black text-[#5856D6] tracking-tighter">${char.walletBalance || 0}</div>
+                <p className="text-[10px] font-bold opacity-30 uppercase tracking-widest">存取權限已授權</p>
+              </div>
+              <div className="space-y-3">
+                <h5 className="text-xs font-bold opacity-40 uppercase px-2">近期動態紀錄</h5>
+                <div className={`rounded-2xl p-4 space-y-3 ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white shadow-sm'}`}>
+                  {char.activityLogs?.map((log, i) => <div key={i} className="text-xs opacity-70 border-l-2 border-[#76DE84] pl-3 py-1">{log}</div>)}
+                  {(!char.activityLogs || char.activityLogs.length === 0) && <p className="text-center opacity-30 py-4 italic">暫無紀錄</p>}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      }
 
       return (
-        <div className={`flex-1 flex flex-col h-full ${isDarkMode ? 'bg-black text-white' : 'bg-[#f2f2f7] text-black'}`}>
-          <Header title="編輯角色" onBack={() => setEditingCharId(null)} isDarkMode={isDarkMode} />
-          <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-20">
-            {/* 大頭照 */}
-            <div className="flex flex-col items-center py-6">
-              <div className="w-24 h-24 rounded-full bg-neutral-200 flex items-center justify-center text-5xl border-4 border-white shadow-lg mb-2 overflow-hidden">
+        <div className={`flex-1 flex flex-col h-full ${isDarkMode ? 'bg-black text-white' : 'bg-[#f2f2f7] text-black'} overflow-y-auto pb-20`}>
+          <Header title={`編輯 ${char.name}`} onBack={() => { setEditingCharId(null); setCharTab('list'); }} isDarkMode={isDarkMode} />
+          <div className="p-4 space-y-6">
+            <div className="flex flex-col items-center gap-2">
+              <div onClick={() => handleImageUpload(u => update('avatar', u))} className="w-20 h-20 rounded-full overflow-hidden border-4 border-white shadow-lg cursor-pointer relative group">
                 <AvatarImage src={char.avatar} className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white"><CameraIcon size={20} /></div>
               </div>
-              <button onClick={() => {
-                const icon = prompt('輸入 Emoji 或圖片網址', char.avatar);
-                if(icon) updateChar('avatar', icon);
-              }} className="text-[#76DE84] text-sm font-bold">更換頭像</button>
+              <span className="text-[10px] font-bold opacity-40 uppercase">點擊更換照片</span>
             </div>
-
-            {/* 基本資料區 */}
-            <div className={`rounded-xl overflow-hidden divide-y ${isDarkMode ? 'bg-[#1c1c1e] divide-[#38383a]' : 'bg-white divide-neutral-100'}`}>
-              <ProfileInput label="姓名" value={char.name} isDark={isDarkMode} onChange={v => updateChar('name', v)} />
-              <ProfileInput label="性別" value={char.gender} isDark={isDarkMode} onChange={v => updateChar('gender', v)} />
-              <ProfileInput label="年齡" value={char.age} isDark={isDarkMode} onChange={v => updateChar('age', v)} />
-              <ProfileInput label="好感度" value={char.favorability.toString()} isDark={isDarkMode} onChange={v => updateChar('favorability', parseInt(v) || 0)} />
+            <div className={`rounded-xl overflow-hidden divide-y ${isDarkMode ? 'bg-[#1c1c1e] divide-white/5' : 'bg-white shadow-sm'}`}>
+              <ProfileInput label="姓名" value={char.name} isDark={isDarkMode} onChange={(v:any) => update('name', v)} />
+              <ProfileInput label="暱稱" value={char.charNickname} isDark={isDarkMode} onChange={(v:any) => update('charNickname', v)} />
+              <ProfileInput label="地點" value={char.location} isDark={isDarkMode} onChange={(v:any) => update('location', v)} />
+              <ProfileInput label="簽名" value={char.signature} isDark={isDarkMode} onChange={(v:any) => update('signature', v)} />
             </div>
-
-            {/* 性格與簽名 */}
-            <div className={`rounded-xl overflow-hidden divide-y ${isDarkMode ? 'bg-[#1c1c1e] divide-[#38383a]' : 'bg-white divide-neutral-100'}`}>
-              <div className="px-5 py-3">
-                <label className="text-xs font-bold opacity-40 block mb-1">個性設定</label>
-                <input className="w-full bg-transparent outline-none text-sm" value={char.personality} onChange={e => updateChar('personality', e.target.value)} />
-              </div>
-              <div className="px-5 py-3">
-                <label className="text-xs font-bold opacity-40 block mb-1">你對他的暱稱</label>
-                <input className="w-full bg-transparent outline-none text-sm" value={charNickname} onChange={e => updateChar('charNickname', e.target.value)} />
-              </div>
-              <div className="px-5 py-3">
-                <label className="text-xs font-bold opacity-40 block mb-1">他對你的暱稱</label>
-                <input className="w-full bg-transparent outline-none text-sm" value={userNickname} onChange={e => updateChar('userNickname', e.target.value)} />
-              </div>
-              <div className="px-5 py-3">
-                <label className="text-xs font-bold opacity-40 block mb-1">個人簽名</label>
-                <input className="w-full bg-transparent outline-none text-sm" value={char.signature} onChange={e => updateChar('signature', e.target.value)} />
-              </div>
-              <div className="px-5 py-3">
-                <label className="text-xs font-bold opacity-40 block mb-1">出沒地點</label>
-                <input className="w-full bg-transparent outline-none text-sm" value={char.location} onChange={e => updateChar('char.location', e.target.value)} />
+            <div className="space-y-2">
+              <label className="text-xs font-bold opacity-40 px-2 uppercase">行為自動化開關</label>
+              <div className={`rounded-xl divide-y ${isDarkMode ? 'bg-[#1c1c1e] divide-white/5' : 'bg-white shadow-sm'}`}>
+                <div className="px-5 py-3 flex justify-between items-center text-sm"><span>自動釣魚</span><input type="checkbox" checked={char.proactiveFishing} onChange={e => update('proactiveFishing', e.target.checked)} /></div>
+                <div className="px-5 py-3 flex justify-between items-center text-sm"><span>自動售魚</span><input type="checkbox" checked={char.autoSellFish} onChange={e => update('autoSellFish', e.target.checked)} /></div>
+                <div className="px-5 py-3 flex justify-between items-center text-sm"><span>自動澆水</span><input type="checkbox" checked={char.proactiveGarden} onChange={e => update('proactiveGarden', e.target.checked)} /></div>
               </div>
             </div>
-
-            {/* AI 核心指令 */}
-            <div className={`rounded-xl p-5 ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white'}`}>
-              <label className="text-xs font-bold opacity-40 block mb-2">AI 系統提示語 (System Prompt)</label>
-              <textarea 
-                className="w-full h-32 bg-transparent outline-none text-sm resize-none"
-                value={char.settings}
-                onChange={e => updateChar('settings', e.target.value)}
-                placeholder="例如：你現在是一個傲嬌的妹妹..."
-              />
-            </div>
-
-            <button onClick={() => {
-              if(confirm('確定要刪除此角色嗎？')) {
-                setCharacters(prev => prev.filter(c => c.id !== editingCharId));
-                setEditingCharId(null);
-              }
-            }} className="w-full py-4 text-red-500 font-bold">刪除角色</button>
+            <button onClick={() => setCharTab('peeper')} className="w-full py-4 bg-[#5856D6] text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95">
+              <Eye size={20} /> 進入偷窺者模式
+            </button>
+            <button onClick={() => {if(confirm("刪除？")){setCharacters(prev => prev.filter(c => c.id !== char.id)); setEditingCharId(null);}}} className="w-full py-4 text-red-500 font-bold bg-red-500/5 rounded-2xl">刪除角色</button>
           </div>
         </div>
       );
     }
-
-    // 角色列表頁面
     return (
-      <div className={`flex-1 flex flex-col h-full ${isDarkMode ? 'bg-black text-white' : 'bg-[#f2f2f7] text-black'}`}>
-        <div className="px-6 pt-16 pb-3 flex justify-between items-center">
+      <div className={`flex-1 flex flex-col h-full ${isDarkMode ? 'bg-black text-white' : 'bg-[#f2f2f7] text-black'} overflow-y-auto pb-20`}>
+        <div className="px-6 pt-16 pb-3 flex justify-between items-center sticky top-0 z-10 bg-inherit backdrop-blur-md">
           <span className="text-3xl font-black text-[#76DE84]">CHARACTERS</span>
           <button onClick={() => {
             const newId = Date.now().toString();
-            const newChar: Character = {
-              id: newId, name: '新角色', avatar: '🐱', gender: '女', age: '18',
-              personality: '溫柔', charNickname: '笨蛋、親愛的', userNickname: '主人、小貓', signature: '很高興認識你', location: '學校、公司',
-              settings: '你是一個親切的聊天對象。', favorability: 0, messages: [], memos: [],
-              minResponseTime: 1, maxResponseTime: 3, maxMessagesPerTurn: 1
-            };
-            setCharacters([...characters, newChar]);
-            setEditingCharId(newId); // 新增後直接進入編輯頁
-          }} className="w-10 h-10 rounded-full bg-[#76DE84] text-white flex items-center justify-center shadow-lg active:scale-90 transition-transform">
-            <Plus size={24} />
-          </button>
+            setCharacters([...characters, { id: newId, name: '新角色', avatar: getRandomAnimalEmoji(), messages: [], favorability: 0, walletBalance: 300, location: '未設定', activityLogs: [] } as any]);
+            setEditingCharId(newId); setCharTab('edit');
+          }} className="w-10 h-10 rounded-full bg-[#76DE84] text-white flex items-center justify-center shadow-lg active:scale-90 transition-transform"><Plus size={24} /></button>
         </div>
-        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        <div className="p-4 space-y-3">
           {characters.map(c => (
-            <div key={c.id} onClick={() => setEditingCharId(c.id)} className={`p-4 rounded-3xl flex items-center gap-4 active:scale-[0.98] transition-all border ${isDarkMode ? 'bg-[#1c1c1e] border-white/5' : 'bg-white border-neutral-100 shadow-sm'}`}>
-              <div className="w-14 h-14 rounded-full overflow-hidden bg-neutral-100 flex items-center justify-center text-2xl border border-white/10">
-                 <AvatarImage src={c.avatar} className="w-full h-full object-cover" />
-              </div>
-              <div className="flex-1">
-                <div className="font-bold text-lg">{c.name}</div>
-                <div className="text-xs opacity-40 italic">{c.signature || '這傢伙很懶，什麼都沒留'}</div>
-              </div>
-              <div className="text-right">
-                 <div className="text-pink-500 font-black text-sm">❤️ {c.favorability}</div>
-                 <ChevronRight size={16} className="ml-auto opacity-20" />
-              </div>
+            <div key={c.id} onClick={() => {setEditingCharId(c.id); setCharTab('edit');}} className={`p-4 rounded-3xl flex items-center gap-4 ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white shadow-sm'} cursor-pointer active:scale-95 transition-all`}>
+              <div className="w-14 h-14 rounded-full overflow-hidden border"><AvatarImage src={c.avatar} /></div>
+              <div className="flex-1 font-bold text-lg">{c.name}</div>
+              <div className="text-pink-500 font-black">❤️ {c.favorability}</div>
+              <ChevronRight size={16} className="opacity-20" />
             </div>
           ))}
-          {characters.length === 0 && <div className="p-20 text-center text-neutral-400">目前空空如也，點擊上方 + 創造新角色</div>}
         </div>
       </div>
     );
@@ -5004,7 +4937,6 @@ return (
 }
 
 // --- 輔助小組件 (定義在 App 外面，確保只出現一次) ---
-
 const ProfileInput = ({ label, value, isDark, onChange }: any) => (
   <div className="px-5 py-3 flex items-center"><span className="w-20 text-sm font-medium">{label}</span>
     <input className={`flex-1 text-sm outline-none bg-transparent ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`} value={value} onChange={e => onChange(e.target.value)} placeholder={`請輸入${label}`} /></div>
