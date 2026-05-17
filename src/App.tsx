@@ -551,7 +551,6 @@ const MailboxApp = ({
   const [isSending, setIsSending] = useState(false);
 
   const inbox = letters.filter(l => l.receiverId === 'user').sort((a, b) => b.timestamp - a.timestamp);
-  const outbox = letters.filter(l => l.senderId === 'user').sort((a, b) => b.timestamp - a.timestamp);
 
   const handleToggleChar = (id: string) => {
     setSelectedCharIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
@@ -560,7 +559,6 @@ const MailboxApp = ({
   const handleSendAll = () => {
     if (selectedCharIds.length === 0 || !content.trim()) return;
     setIsSending(true);
-    
     setTimeout(() => {
       const newLetters: Letter[] = selectedCharIds.map(charId => {
         const char = characters.find(c => c.id === charId);
@@ -579,102 +577,53 @@ const MailboxApp = ({
       setContent('');
       setSelectedCharIds([]);
       setIsSending(false);
-      alert(`${newLetters.length} 封信件已投遞！角色將在一小時後收到。`);
+      alert(`${newLetters.length} 封信件已投遞！`);
     }, 1000);
   };
 
   return (
     <div className={`flex-1 flex flex-col h-full ${isDarkMode ? 'bg-orange-50 text-amber-900' : 'bg-orange-50 text-amber-900'} overflow-hidden relative`}>
-      {/* Paper Texture Overlay */}
       <div className="absolute inset-0 opacity-10 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/old-paper.png')]"></div>
       
-      <div className={`px-4 pt-16 pb-3 flex items-center justify-between border-b border-amber-200 z-10`}>
+      <div className="px-4 pt-16 pb-3 flex items-center justify-between border-b border-amber-200 z-10">
         <div className="flex gap-2">
-          <button 
-            onClick={() => setTab('write')}
-            className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${tab === 'write' ? 'bg-amber-600 text-white shadow-lg' : 'bg-amber-200 text-amber-700'}`}
-          >
-            書信撰寫
-          </button>
-          <button 
-            onClick={() => setTab('inbox')}
-            className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${tab === 'inbox' ? 'bg-amber-600 text-white shadow-lg' : 'bg-amber-200 text-amber-700'}`}
-          >
-            查看信箱 {inbox.filter(l => !l.isRead).length > 0 && <span className="bg-red-500 text-white rounded-full px-1.5 ml-1 animate-pulse">{inbox.filter(l => !l.isRead).length}</span>}
-          </button>
+          <button onClick={() => setTab('write')} className={`px-3 py-1 rounded-full text-xs font-bold ${tab === 'write' ? 'bg-amber-600 text-white' : 'bg-amber-200 text-amber-700'}`}>書信撰寫</button>
+          <button onClick={() => setTab('inbox')} className={`px-3 py-1 rounded-full text-xs font-bold ${tab === 'inbox' ? 'bg-amber-600 text-white' : 'bg-amber-200 text-amber-700'}`}>查看信箱</button>
         </div>
         <button onClick={goHome} className="text-amber-600 font-medium">關閉</button>
       </div>
 
       <div className="flex-1 overflow-y-auto p-6 z-10">
         {tab === 'write' ? (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-            <div className="bg-white/60 p-6 rounded-lg shadow-sm border border-amber-100 min-h-[300px] flex flex-col">
-              <div className="flex flex-col gap-2 mb-4 border-b border-amber-100 pb-2">
-                <span className="text-sm font-bold opacity-60">收件人 (多選)：</span>
-                <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto pt-1">
-{characters.map(c => (
-  <button 
-    key={c.id} 
-    onClick={() => handleToggleChar(c.id)}
-    className={`px-3 py-1 rounded-full text-[10px] font-bold border transition-all ${selectedCharIds.includes(c.id) ? 'bg-amber-600 border-amber-600 text-white' : 'bg-transparent border-amber-200 text-amber-700'}`}
-  >
-    {c.name}
-  </button>
-))}
-                </div>
-              </div>
-              <textarea 
-                className="flex-1 bg-transparent w-full resize-none outline-none text-sm leading-relaxed placeholder:text-amber-800/30"
-                placeholder="在此寫下想說的話..."
-                value={content}
-                onChange={e => setContent(e.target.value)}
-                style={{ backgroundImage: 'linear-gradient(transparent, transparent 27px, #E5E7EB 27px)', backgroundSize: '100% 28px', lineHeight: '28px' }}
-              />
-              <div className="mt-4 flex justify-between items-center">
-                <span className="text-[10px] opacity-40">已選擇 {selectedCharIds.length} 位收件人</span>
+          <div className="bg-white/60 p-6 rounded-lg shadow-sm border border-amber-100 flex flex-col min-h-[300px]">
+            <span className="text-sm font-bold opacity-60 mb-2">收件人 (多選)：</span>
+            <div className="flex flex-wrap gap-2 mb-4">
+              {characters.map(c => (
                 <button 
-                  onClick={handleSendAll}
-                  disabled={selectedCharIds.length === 0 || !content.trim() || isSending}
-                  className={`px-6 py-2 rounded-full font-bold text-sm flex items-center gap-2 transition-all ${selectedCharIds.length === 0 || !content.trim() || isSending ? 'bg-gray-300 text-gray-500' : 'bg-amber-600 text-white hover:bg-amber-700 shadow-md transform active:scale-95'}`}
+                  key={c.id} 
+                  onClick={() => handleToggleChar(c.id)}
+                  className={`px-3 py-1 rounded-full text-[10px] font-bold border ${selectedCharIds.includes(c.id) ? 'bg-amber-600 text-white' : 'bg-transparent border-amber-200 text-amber-700'}`}
                 >
-                  {isSending ? '寄送中...' : <><Send size={14} /> 一鍵投遞</>}
+                  {c.name}
                 </button>
-              </div>
+              ))}
             </div>
-            <div className="text-[10px] text-center opacity-40 italic">※ 信件將於一小時後送達對方手中</div>
-          </motion.div>
+            <textarea 
+              className="flex-1 bg-transparent w-full resize-none outline-none text-sm leading-relaxed"
+              placeholder="在此寫下想說的話..."
+              value={content}
+              onChange={e => setContent(e.target.value)}
+            />
+            <button onClick={handleSendAll} className="mt-4 px-6 py-2 bg-amber-600 text-white rounded-full font-bold">一鍵投遞</button>
+          </div>
         ) : (
           <div className="space-y-4">
-            {inbox.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 opacity-30">
-                <Mail size={48} />
-                <p className="mt-2 text-sm">信箱空空的...</p>
+            {inbox.map(l => (
+              <div key={l.id} className="p-4 bg-white rounded-lg border border-amber-200">
+                <p className="font-bold text-sm">來自：{l.senderName}</p>
+                <p className="text-xs">{l.content}</p>
               </div>
-            ) : (
-              inbox.map(l => (
-                <motion.div 
-                  key={l.id} 
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  onClick={() => {
-                    if (!l.isRead) {
-                      setLetters(prev => prev.map(prevL => prevL.id === l.id ? { ...prevL, isRead: true } : prevL));
-                    }
-                  }}
-                  className={`p-4 rounded-lg border shadow-sm transition-all cursor-pointer ${l.isRead ? 'bg-white/40 border-amber-100 opacity-60' : 'bg-white border-amber-200 ring-1 ring-amber-400/20'}`}
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <span className="font-bold text-sm text-amber-900 flex items-center gap-1">
-                      {!l.isRead && <span className="w-2 h-2 bg-red-500 rounded-full"></span>}
-                      來自：{l.senderName}
-                    </span>
-                    <span className="text-[10px] opacity-40">{new Date(l.timestamp).toLocaleString()}</span>
-                  </div>
-                  <p className="text-xs leading-relaxed line-clamp-3 whitespace-pre-wrap">{l.content}</p>
-                </motion.div>
-              ))
-            )}
+            ))}
           </div>
         )}
       </div>
@@ -3086,7 +3035,7 @@ const simulateAiDescriber = async (char: GamePlayer, topic: string) => {
 };
 
 export default function App() {
-  // 1. 基礎狀態
+  // --- 這些宣告必須存在於 App 裡面 ---
   const [screenState, setScreenState] = useState<ScreenState>(ScreenState.Locked);
   const [activeApp, setActiveApp] = useState<AppId | null>(null);
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
@@ -3094,12 +3043,18 @@ export default function App() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [language, setLanguage] = useState<Language>(Language.ZH_TW);
   const [isFullScreen, setIsFullScreen] = useState(false);
-  const [isLoaded, setIsLoaded] = useState(false);
+
+  // ⚠️ 檢查這兩行是否被你不小心刪掉了 ⚠️
+  const [lockWallpaper, setLockWallpaper] = useState<string>("https://storage.googleapis.com/fun-app-assets/user-uploads/input_file_0.png");
+  const [homeWallpaper, setHomeWallpaper] = useState<string>("https://storage.googleapis.com/fun-app-assets/user-uploads/input_file_0.png");
 
   // 2. 玩家與 AI 設定
   const [userProfile, setUserProfile] = useState<UserProfile>({ 
     name: '使用者', age: '', gender: '', avatar: '🥕', signature: '今天也是美好的一天' 
   });
+
+  const [walletBalance, setWalletBalance] = useState(300);
+  const [characters, setCharacters] = useState<Character[]>([]);
   const [aiSettings, setAiSettings] = useState<AISettings>({ 
     apiKey: '', model: 'gemini-1.5-flash', baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/'
   });
@@ -3162,33 +3117,104 @@ export default function App() {
   const goHome = () => { setScreenState(ScreenState.Home); setActiveApp(null); setSelectedChatId(null); setIsJiggling(false); };
   const openApp = (app: AppId) => { if (!isJiggling) { setActiveApp(app); setScreenState(ScreenState.AppOpen); } };
 
-  // 7. 關鍵：唯一的 renderAppContent (這段必須保持完整，不能中斷)
-  const renderAppContent = () => {
-    if (!activeApp) return null;
+// 記得補上這些函數，否則傳給 GardenApp 的 props 會是空的
+  const onUnlockPatch = (id: number) => {
+    if (walletBalance >= 300) {
+      setWalletBalance(prev => prev - 300);
+      addTransaction('expense', 300, '解鎖花園土堆');
+      setGardenPatches(prev => prev.map(p => p.id === id ? { ...p, status: 'empty' } : p));
+    }
+  };
+
+  const onPlant = (id: number) => {
+    const crop = CROP_TYPES[Math.floor(Math.random() * CROP_TYPES.length)];
+    setGardenPatches(prev => prev.map(p => p.id === id ? { 
+      ...p, status: 'growing', cropId: crop.id, plantedTime: Date.now(), 
+      lastWateredTime: Date.now(), needsWatering: false, waterCount: 0 
+    } : p));
+  };
+  
+  const onWater = (id: number) => {
+    setGardenPatches(prev => prev.map(p => p.id === id ? { 
+      ...p, lastWateredTime: Date.now(), needsWatering: false, 
+      waterCount: (p.waterCount || 0) + 1 
+    } : p));
+  };
+
+  const onHarvest = (id: number) => {
+    setGardenPatches(prev => prev.map(p => {
+      if (p.id === id) {
+        if (p.status === 'ready' && p.cropId) {
+          setWarehouseItems(items => {
+            const existing = items.find(i => i.id === p.cropId);
+            return existing 
+              ? items.map(i => i.id === p.cropId ? { ...i, amount: i.amount + 1 } : i)
+              : [...items, { id: p.cropId!, amount: 1 }];
+          });
+        }
+        return { ...p, status: 'empty', cropId: undefined, waterCount: 0 };
+      }
+      return p;
+    }));
+  };
+
+  // 釣魚函數也需要補上
+const onCatchFish = (id: string) => {
+  setWarehouseItems(prev => {
+    const existing = prev.find(i => i.id === id);
+    return existing ? prev.map(i => i.id === id ? { ...i, amount: i.amount + 1 } : i) : [...prev, { id, amount: 1 }];
+  });
+};
+
+const onCatchTrash = (coins: number) => {
+  setWalletBalance(prev => prev + coins);
+  addTransaction('income', coins, '釣魚獲得金幣');
+};
+
+const onSell = (id: string, name: string, price: number) => {
+  setWarehouseItems(prev => {
+    const existing = prev.find(i => i.id === id);
+    if (existing && existing.amount > 0) {
+      setWalletBalance(b => b + price);
+      addTransaction('income', price, `出售 ${name}`);
+      return existing.amount === 1 ? prev.filter(i => i.id !== id) : prev.map(i => i.id === id ? { ...i, amount: i.amount - 1 } : i);
+    }
+    return prev;
+  });
+};
+
+const renderAppContent = () => {
     switch (activeApp) {
-      case 'messages': return null; // 你的聊天室邏輯
-      case 'settings': return renderSettings(); // 確保你有定義 renderSettings 函數
-      case 'characters': return renderCharacters(); 
-      case 'game': return <GameApp 
+      case 'messages': return null; 
+      case 'settings': return renderSettings();
+      case 'characters': return renderCharacters();
+      case 'wheel': return renderWheelApp();
+      case 'game': 
+        return <GameApp 
           characters={characters} userProfile={userProfile} isDarkMode={isDarkMode} 
           goHome={goHome} aiSettings={aiSettings} walletBalance={walletBalance} 
           setWalletBalance={setWalletBalance} setCharacters={setCharacters} 
           addTransaction={addTransaction} callUniversalAI={callUniversalAI} 
         />;
-      case 'garden': return <GardenApp 
+      case 'garden': 
+        return <GardenApp 
           patches={gardenPatches} isDarkMode={isDarkMode} goHome={goHome}
           onUnlockPatch={onUnlockPatch} onPlant={onPlant} onWater={onWater} onHarvest={onHarvest}
         />;
-      case 'store': return <StoreApp walletBalance={walletBalance} setWalletBalance={setWalletBalance} addTransaction={addTransaction} setWarehouseItems={setWarehouseItems} dailyStoreItems={dailyStoreItems} isDarkMode={isDarkMode} goHome={goHome} warehouseItems={warehouseItems} characters={characters} setCharacters={setCharacters} />;
       case 'kitchen': return <KitchenApp isDarkMode={isDarkMode} goHome={goHome} warehouseItems={warehouseItems} setWarehouseItems={setWarehouseItems} characters={characters} setCharacters={setCharacters} />;
+      case 'store': return <StoreApp walletBalance={walletBalance} setWalletBalance={setWalletBalance} addTransaction={addTransaction} setWarehouseItems={setWarehouseItems} dailyStoreItems={dailyStoreItems} isDarkMode={isDarkMode} goHome={goHome} warehouseItems={warehouseItems} characters={characters} setCharacters={setCharacters} />;
       case 'wallet': return <WalletApp walletBalance={walletBalance} transactions={transactions} isDarkMode={isDarkMode} goHome={goHome} setActiveApp={setActiveApp} />;
       case 'warehouse': return <WarehouseApp warehouseItems={warehouseItems} receivedGifts={receivedGifts} isDarkMode={isDarkMode} goHome={goHome} onSell={onSell} />;
       case 'fishing': return <FishingApp isDarkMode={isDarkMode} goHome={goHome} onCatchFish={onCatchFish} onCatchTrash={onCatchTrash} />;
       case 'photos': return <MailboxApp isDarkMode={isDarkMode} goHome={goHome} letters={letters} setLetters={setLetters} characters={characters} userProfile={userProfile} />;
       case 'dex': return <DexApp isDarkMode={isDarkMode} goHome={goHome} />;
       case 'moments': return <MomentsApp momentGroups={momentGroups} setMomentGroups={setMomentGroups} momentPosts={momentPosts} setMomentPosts={setMomentPosts} characters={characters} userProfile={userProfile} isDarkMode={isDarkMode} goHome={goHome} />;
-      case 'wheel': return renderWheelApp();
-      default: return null;
+      default: return (
+        <div className={`flex-1 flex flex-col items-center justify-center pt-20 ${isDarkMode ? 'bg-black text-white' : 'bg-[#f2f2f7] text-black'}`}>
+          <div className="animate-bounce mb-4"><Smartphone size={48} className="text-[#76DE84]" /></div>
+          <h2 className="text-xl font-bold capitalize">{appNames[activeApp || ''] || activeApp}</h2>
+        </div>
+      );
     }
   };
 
