@@ -72,7 +72,7 @@ import {
   Minimize,
   Download,
   Upload,
-  User
+  User,
   Moon
 } from 'lucide-react';
 import { GoogleGenerativeAI as GoogleGenAI } from "@google/generative-ai";
