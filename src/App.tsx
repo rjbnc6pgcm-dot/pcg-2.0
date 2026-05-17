@@ -63,7 +63,8 @@ import {
   Activity,
   ChevronDown,
   ChevronUp,
-  Gift as GiftIcon
+  Gift as GiftIcon,
+  Globe 
 } from 'lucide-react';
 import { GoogleGenerativeAI as GoogleGenAI } from "@google/generative-ai";
 
@@ -3087,6 +3088,8 @@ export default function App() {
   const [typingChatId, setTypingChatId] = useState<string | null>(null);
 
   // 設定與轉盤專用狀態
+  const [editingCharId, setEditingCharId] = useState<string | null>(null);
+  const [wheelSpins, setWheelSpins] = useState(3); // 初始次數設為 3
   const [settingsTab, setSettingsTab] = useState<'main' | 'general' | 'appearance' | 'privacy' | 'icons' | 'aiConfig'>('main');
   const [isSpinning, setIsSpinning] = useState(false);
   const [wheelRotation, setWheelRotation] = useState(0);
@@ -3342,25 +3345,41 @@ export default function App() {
     );
   };
 
-  const renderWheelApp = () => {
+const renderWheelApp = () => {
     const handleSpin = () => {
+      // 檢查次數
+      if (wheelSpins <= 0) {
+        alert("今日抽獎次數已用完囉！");
+        return;
+      }
       if (isSpinning) return;
+
       setIsSpinning(true);
+      setWheelSpins(prev => prev - 1); // 扣除次數
+
       const randomDeg = 1800 + Math.floor(Math.random() * 360);
       setWheelRotation(prev => prev + randomDeg);
+      
       setTimeout(() => {
         setIsSpinning(false);
         const actualDeg = (wheelRotation + randomDeg) % 360;
         const rewardIdx = Math.floor(((360 - actualDeg) % 360) / (360 / wheelRewards.length));
         const amount = wheelRewards[rewardIdx];
         setWalletBalance(prev => prev + amount);
-        addTransaction('income', amount, '每日轉盤獎金');
-        alert(`恭喜獲得 $${amount}！`);
+        addTransaction('income', amount, '每日轉盤獎勵');
+        alert(`恭喜獲得 $${amount} 金幣！`);
       }, 4000);
     };
+
     return (
       <div className={`flex-1 flex flex-col items-center justify-center p-6 pt-20 ${isDarkMode ? 'bg-[#1c1c1e] text-white' : 'bg-amber-50 text-amber-900'}`}>
-        <h2 className="text-3xl font-black italic mb-10 tracking-tighter">DAILY SPIN</h2>
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-black italic tracking-tighter">DAILY SPIN</h2>
+          <div className="mt-2 bg-amber-200/50 px-4 py-1 rounded-full inline-block">
+             <span className="text-xs font-bold text-amber-800">今日剩餘次數：{wheelSpins} / 3</span>
+          </div>
+        </div>
+        
         <div className="relative">
           <motion.div animate={{ rotate: wheelRotation }} transition={{ duration: 4, ease: [0.13, 0, 0, 1] }} className="w-72 h-72 rounded-full border-[10px] border-amber-600 relative overflow-hidden shadow-2xl bg-white">
             {wheelRewards.map((r, i) => (
@@ -3369,39 +3388,130 @@ export default function App() {
               </div>
             ))}
           </motion.div>
-          <div className="absolute top-[-10px] left-1/2 -translate-x-1/2 w-0 h-0 border-l-[15px] border-l-transparent border-r-[15px] border-r-transparent border-t-[30px] border-t-red-600 z-10" />
+          {/* 指針 */}
+          <div className="absolute top-[-10px] left-1/2 -translate-x-1/2 w-0 h-0 border-l-[15px] border-l-transparent border-r-[15px] border-r-transparent border-t-[30px] border-t-red-600 z-10 drop-shadow-md" />
         </div>
-        <button onClick={handleSpin} disabled={isSpinning} className={`mt-14 px-12 py-4 rounded-full font-black text-xl shadow-xl transition-all ${isSpinning ? 'bg-neutral-400' : 'bg-amber-600 text-white hover:bg-amber-700'}`}>
-          {isSpinning ? 'SPINNING...' : 'SPIN NOW'}
+
+        <button 
+          onClick={handleSpin} 
+          disabled={isSpinning || wheelSpins <= 0} 
+          className={`mt-14 px-12 py-4 rounded-full font-black text-xl shadow-xl transition-all active:scale-95 ${
+            (isSpinning || wheelSpins <= 0) ? 'bg-neutral-400' : 'bg-amber-600 text-white hover:bg-amber-700'
+          }`}
+        >
+          {isSpinning ? 'SPINNING...' : wheelSpins <= 0 ? 'TOMORROW' : 'SPIN NOW'}
         </button>
       </div>
     );
   };
 
-  const renderCharacters = () => (
-    <div className={`flex-1 flex flex-col h-full ${isDarkMode ? 'bg-black text-white' : 'bg-[#f2f2f7] text-black'}`}>
-      <div className="px-6 pt-16 pb-3 flex justify-between items-center bg-opacity-80 backdrop-blur-md sticky top-0">
-        <span className="text-3xl font-black">角色</span>
-        <button onClick={() => {
-          const name = prompt("角色名稱?");
-          if(name) setCharacters([...characters, { id: Date.now().toString(), name, avatar: getRandomAnimalEmoji(), messages: [], favorability: 0 } as any]);
-        }} className="text-[#76DE84] font-bold">+ 新增</button>
-      </div>
-      <div className="p-4 space-y-3 overflow-y-auto">
-        {characters.map(c => (
-          <div key={c.id} className={`p-4 rounded-2xl flex items-center gap-4 ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white shadow-sm'}`}>
-            <div className="w-12 h-12 rounded-full overflow-hidden bg-neutral-100 flex items-center justify-center text-2xl border border-neutral-200">
-               <AvatarImage src={c.avatar} className="w-full h-full object-cover" />
+const renderCharacters = () => {
+    // 如果有選中角色，則顯示「編輯頁面」
+    if (editingCharId) {
+      const char = characters.find(c => c.id === editingCharId);
+      if (!char) return null;
+      
+      const updateChar = (field: keyof Character, value: any) => {
+        setCharacters(prev => prev.map(c => c.id === editingCharId ? { ...c, [field]: value } : c));
+      };
+
+      return (
+        <div className={`flex-1 flex flex-col h-full ${isDarkMode ? 'bg-black text-white' : 'bg-[#f2f2f7] text-black'}`}>
+          <Header title="編輯角色" onBack={() => setEditingCharId(null)} isDarkMode={isDarkMode} />
+          <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-20">
+            {/* 大頭照 */}
+            <div className="flex flex-col items-center py-6">
+              <div className="w-24 h-24 rounded-full bg-neutral-200 flex items-center justify-center text-5xl border-4 border-white shadow-lg mb-2 overflow-hidden">
+                <AvatarImage src={char.avatar} className="w-full h-full object-cover" />
+              </div>
+              <button onClick={() => {
+                const icon = prompt('輸入 Emoji 或圖片網址', char.avatar);
+                if(icon) updateChar('avatar', icon);
+              }} className="text-[#76DE84] text-sm font-bold">更換頭像</button>
             </div>
-            <div className="flex-1 font-bold">{c.name}</div>
-            <div className="text-pink-500 font-bold">❤️ {c.favorability}</div>
-            <button onClick={() => setCharacters(characters.filter(x => x.id !== c.id))} className="text-red-400 text-xs">刪除</button>
+
+            {/* 基本資料區 */}
+            <div className={`rounded-xl overflow-hidden divide-y ${isDarkMode ? 'bg-[#1c1c1e] divide-[#38383a]' : 'bg-white divide-neutral-100'}`}>
+              <ProfileInput label="姓名" value={char.name} isDark={isDarkMode} onChange={v => updateChar('name', v)} />
+              <ProfileInput label="性別" value={char.gender} isDark={isDarkMode} onChange={v => updateChar('gender', v)} />
+              <ProfileInput label="年齡" value={char.age} isDark={isDarkMode} onChange={v => updateChar('age', v)} />
+              <ProfileInput label="好感度" value={char.favorability.toString()} isDark={isDarkMode} onChange={v => updateChar('favorability', parseInt(v) || 0)} />
+            </div>
+
+            {/* 性格與簽名 */}
+            <div className={`rounded-xl overflow-hidden divide-y ${isDarkMode ? 'bg-[#1c1c1e] divide-[#38383a]' : 'bg-white divide-neutral-100'}`}>
+              <div className="px-5 py-3">
+                <label className="text-xs font-bold opacity-40 block mb-1">個性設定</label>
+                <input className="w-full bg-transparent outline-none text-sm" value={char.personality} onChange={e => updateChar('personality', e.target.value)} />
+              </div>
+              <div className="px-5 py-3">
+                <label className="text-xs font-bold opacity-40 block mb-1">個人簽名</label>
+                <input className="w-full bg-transparent outline-none text-sm" value={char.signature} onChange={e => updateChar('signature', e.target.value)} />
+              </div>
+            </div>
+
+            {/* AI 核心指令 */}
+            <div className={`rounded-xl p-5 ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white'}`}>
+              <label className="text-xs font-bold opacity-40 block mb-2">AI 系統提示語 (System Prompt)</label>
+              <textarea 
+                className="w-full h-32 bg-transparent outline-none text-sm resize-none"
+                value={char.settings}
+                onChange={e => updateChar('settings', e.target.value)}
+                placeholder="例如：你現在是一個傲嬌的妹妹..."
+              />
+            </div>
+
+            <button onClick={() => {
+              if(confirm('確定要刪除此角色嗎？')) {
+                setCharacters(prev => prev.filter(c => c.id !== editingCharId));
+                setEditingCharId(null);
+              }
+            }} className="w-full py-4 text-red-500 font-bold">刪除角色</button>
           </div>
-        ))}
-        {characters.length === 0 && <div className="p-20 text-center text-neutral-400">點擊上方新增角色</div>}
+        </div>
+      );
+    }
+
+    // 角色列表頁面
+    return (
+      <div className={`flex-1 flex flex-col h-full ${isDarkMode ? 'bg-black text-white' : 'bg-[#f2f2f7] text-black'}`}>
+        <div className="px-6 pt-16 pb-3 flex justify-between items-center">
+          <span className="text-3xl font-black text-[#76DE84]">CHARACTERS</span>
+          <button onClick={() => {
+            const newId = Date.now().toString();
+            const newChar: Character = {
+              id: newId, name: '新角色', avatar: '🐱', gender: '女', age: '18',
+              personality: '溫柔', habits: '', signature: '很高興認識你',
+              settings: '你是一個親切的聊天對象。', favorability: 0, messages: [], memos: [],
+              minResponseTime: 1, maxResponseTime: 3, maxMessagesPerTurn: 1
+            };
+            setCharacters([...characters, newChar]);
+            setEditingCharId(newId); // 新增後直接進入編輯頁
+          }} className="w-10 h-10 rounded-full bg-[#76DE84] text-white flex items-center justify-center shadow-lg active:scale-90 transition-transform">
+            <Plus size={24} />
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          {characters.map(c => (
+            <div key={c.id} onClick={() => setEditingCharId(c.id)} className={`p-4 rounded-3xl flex items-center gap-4 active:scale-[0.98] transition-all border ${isDarkMode ? 'bg-[#1c1c1e] border-white/5' : 'bg-white border-neutral-100 shadow-sm'}`}>
+              <div className="w-14 h-14 rounded-full overflow-hidden bg-neutral-100 flex items-center justify-center text-2xl border border-white/10">
+                 <AvatarImage src={c.avatar} className="w-full h-full object-cover" />
+              </div>
+              <div className="flex-1">
+                <div className="font-bold text-lg">{c.name}</div>
+                <div className="text-xs opacity-40 italic">{c.signature || '這傢伙很懶，什麼都沒留'}</div>
+              </div>
+              <div className="text-right">
+                 <div className="text-pink-500 font-black text-sm">❤️ {c.favorability}</div>
+                 <ChevronRight size={16} className="ml-auto opacity-20" />
+              </div>
+            </div>
+          ))}
+          {characters.length === 0 && <div className="p-20 text-center text-neutral-400">目前空空如也，點擊上方 + 創造新角色</div>}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   // --- 4. 渲染切換器 ---
   const renderAppContent = () => {
