@@ -3142,6 +3142,49 @@ const [userProfile, setUserProfile] = useState<UserProfile>({
 
   const [walletBalance, setWalletBalance] = useState(300);
   const [characters, setCharacters] = useState<Character[]>([]);
+
+// --- 存檔導出功能 ---
+  const handleExportSave = () => {
+    const saveData = {
+      userProfile, walletBalance, characters, warehouseItems,
+      transactions, customIcons, appNames, gardenPatches,
+      letters, momentPosts, aiSettings
+    };
+    const blob = new Blob([JSON.stringify(saveData, null, 2)], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `phone_save_${new Date().toISOString().split('T')[0]}.txt`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // --- 存檔導入功能 ---
+  const handleImportSave = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.txt,.json';
+    input.onchange = (e: any) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          try {
+            const data = JSON.parse(event.target?.result as string);
+            if (data.userProfile) setUserProfile(data.userProfile);
+            if (data.walletBalance !== undefined) setWalletBalance(data.walletBalance);
+            if (data.characters) setCharacters(data.characters);
+            if (data.warehouseItems) setWarehouseItems(data.warehouseItems);
+            if (data.aiSettings) setAiSettings(data.aiSettings);
+            alert("導入成功！");
+          } catch (err) { alert("檔案格式錯誤！"); }
+        };
+        reader.readAsText(file);
+      }
+    };
+    input.click();
+  };
+
 // --- API 相關狀態 ---
   const [aiSettings, setAiSettings] = useState<AISettings>({ 
     apiKey: '', 
@@ -3366,48 +3409,6 @@ const [userProfile, setUserProfile] = useState<UserProfile>({
         </div>
       </div>
     );
-  };
-
-// --- 存檔導出功能 ---
-  const handleExportSave = () => {
-    const saveData = {
-      userProfile, walletBalance, characters, warehouseItems,
-      transactions, customIcons, appNames, gardenPatches,
-      letters, momentPosts, aiSettings
-    };
-    const blob = new Blob([JSON.stringify(saveData, null, 2)], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `phone_save_${new Date().toISOString().split('T')[0]}.txt`;
-    link.click();
-    URL.revokeObjectURL(url);
-  };
-
-  // --- 存檔導入功能 ---
-  const handleImportSave = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.txt,.json';
-    input.onchange = (e: any) => {
-      const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          try {
-            const data = JSON.parse(event.target?.result as string);
-            if (data.userProfile) setUserProfile(data.userProfile);
-            if (data.walletBalance !== undefined) setWalletBalance(data.walletBalance);
-            if (data.characters) setCharacters(data.characters);
-            if (data.warehouseItems) setWarehouseItems(data.warehouseItems);
-            if (data.aiSettings) setAiSettings(data.aiSettings);
-            alert("導入成功！");
-          } catch (err) { alert("檔案格式錯誤！"); }
-        };
-        reader.readAsText(file);
-      }
-    };
-    input.click();
   };
 
 const renderSettings = () => {
