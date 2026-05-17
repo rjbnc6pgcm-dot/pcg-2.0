@@ -3074,9 +3074,17 @@ const simulateAiDescriber = async (char: GamePlayer, topic: string) => {
 };
 
 export default function App() {
+  const [settingsTab, setSettingsTab] = useState<'main' | 'general' | 'appearance' | 'privacy' | 'icons' | 'aiConfig'>('main');
+  const [isSpinning, setIsSpinning] = useState(false);
+  const [wheelRotation, setWheelRotation] = useState(0);
+  const [wheelRewards] = useState([10, 50, 100, 150, 100, 100, 0, 50]); // 轉盤獎金
   // --- 1. 所有的變數宣告 (useState & useRef) ---
   const [screenState, setScreenState] = useState<ScreenState>(ScreenState.Locked);
   const [activeApp, setActiveApp] = useState<AppId | null>(null);
+  const [settingsTab, setSettingsTab] = useState<'main' | 'general' | 'appearance' | 'privacy' | 'icons' | 'aiConfig'>('main');
+  const [isSpinning, setIsSpinning] = useState(false);
+  const [wheelRotation, setWheelRotation] = useState(0);
+  const wheelRewards = [10, 50, 100, 200, 500, 1000, 0, 50];
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -3123,11 +3131,10 @@ export default function App() {
 
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
 
-  useEffect(() => {
-    // 初始化隨機商城貨物
+useEffect(() => {
     const shuffle = (arr: any[]) => [...arr].sort(() => 0.5 - Math.random());
     setDailyStoreItems({
-      fish: shuffle(FISH_TYPES).slice(0, 6).map(f => ({ id: f.id, price: f.rarity === '傳說' ? 10000 : f.rarity === '史詩' ? 2000 : 100 })),
+      fish: shuffle(FISH_TYPES).slice(0, 6).map(f => ({ id: f.id, price: 100 })), // 這裡可以根據稀有度設價格
       crops: shuffle(CROP_TYPES).slice(0, 6).map(c => ({ id: c.id, price: c.sellPrice })),
       gifts: shuffle(POSSIBLE_GIFTS).slice(0, 6).map(g => ({ id: g.id, price: g.price }))
     });
@@ -3230,9 +3237,233 @@ export default function App() {
     } catch (e) { return "AI 連線失敗"; }
   };
 
+const renderSettings = () => {
+    const t = TRANSLATIONS[language];
+    
+    if (settingsTab !== 'main') {
+      return (
+        <div className={`flex-1 flex flex-col h-full ${isDarkMode ? 'bg-black text-white' : 'bg-[#f2f2f7] text-black'}`}>
+          <Header title={t[settingsTab as keyof typeof t] || '設定'} onBack={() => setSettingsTab('main')} isDarkMode={isDarkMode} />
+          <div className="flex-1 overflow-y-auto p-4 space-y-6">
+            {settingsTab === 'general' && (
+              <div className={`rounded-xl overflow-hidden divide-y ${isDarkMode ? 'bg-[#1c1c1e] divide-[#38383a]' : 'bg-white divide-neutral-100'}`}>
+                {Object.values(Language).map(lang => (
+                  <div key={lang} onClick={() => setLanguage(lang)} className="px-5 py-3 flex items-center justify-between cursor-pointer active:opacity-70">
+                    <span className="text-sm font-medium">{lang === Language.ZH_TW ? '繁體中文' : lang === Language.ZH_CN ? '简体中文' : lang === Language.EN ? 'English' : '日本語'}</span>
+                    {language === lang && <Check size={18} className="text-[#76DE84]" />}
+                  </div>
+                ))}
+              </div>
+            )}
+            {settingsTab === 'appearance' && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <WallpaperThumb label={t.lockScreen} src={lockWallpaper} onClick={() => {
+                    const url = prompt('輸入鎖定畫面圖片網址', lockWallpaper);
+                    if (url) setLockWallpaper(url);
+                  }} />
+                  <WallpaperThumb label={t.homeScreen} src={homeWallpaper} onClick={() => {
+                    const url = prompt('輸入主畫面圖片網址', homeWallpaper);
+                    if (url) setHomeWallpaper(url);
+                  }} />
+                </div>
+                <div className={`rounded-xl overflow-hidden divide-y ${isDarkMode ? 'bg-[#1c1c1e] divide-[#38383a]' : 'bg-white divide-neutral-100'}`}>
+                   <div className="px-5 py-3 flex items-center justify-between">
+                     <span className="text-sm font-medium">{t.darkMode}</span>
+                     <button onClick={() => setIsDarkMode(!isDarkMode)} className={`w-12 h-6 rounded-full relative transition-colors ${isDarkMode ? 'bg-[#76DE84]' : 'bg-neutral-300'}`}>
+                       <motion.div animate={{ x: isDarkMode ? 24 : 4 }} className="absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm" />
+                     </button>
+                   </div>
+                </div>
+              </div>
+            )}
+            {settingsTab === 'privacy' && (
+              <div className="space-y-4">
+                <button onClick={() => {
+                  const data = JSON.stringify({ userProfile, walletBalance, characters, warehouseItems, transactions });
+                  navigator.clipboard.writeText(data);
+                  alert(t.success);
+                }} className={`w-full py-3 rounded-xl font-bold ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white'}`}>{t.exportSave}</button>
+                <button onClick={() => {
+                  if (confirm(t.resetConfirmDesc)) { localStorage.clear(); location.reload(); }
+                }} className="w-full py-3 rounded-xl font-bold bg-red-500 text-white">{t.reset}</button>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className={`flex-1 flex flex-col h-full ${isDarkMode ? 'bg-black text-white' : 'bg-[#f2f2f7] text-black'}`}>
+        <div className="px-4 pt-16 pb-3 text-3xl font-bold">{t.settings}</div>
+        <div className="flex-1 overflow-y-auto p-4 space-y-6">
+          <div className={`rounded-xl overflow-hidden divide-y ${isDarkMode ? 'bg-[#1c1c1e] divide-[#38383a]' : 'bg-white divide-neutral-100'}`}>
+            <SettingsRow icon={<Globe size={18} color="white" />} iconBg="#007AFF" label={t.general} onClick={() => setSettingsTab('general')} />
+            <SettingsRow icon={<Palette size={18} color="white" />} iconBg="#FF2D55" label={t.appearance} onClick={() => setSettingsTab('appearance')} />
+            <SettingsRow icon={<Lock size={18} color="white" />} iconBg="#5856D6" label={t.privacy} onClick={() => setSettingsTab('privacy')} />
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+const renderMessagesApp = () => {
+    if (selectedChatId) {
+      const char = characters.find(c => c.id === selectedChatId);
+      if (!char) return null;
+      return (
+        <div className={`flex-1 flex flex-col h-full ${isDarkMode ? 'bg-[#1c1c1e] text-white' : 'bg-neutral-50 text-black'}`}>
+          <div className={`px-4 pt-16 pb-3 flex items-center border-b ${isDarkMode ? 'bg-[#1c1c1e]/80 border-[#38383a]' : 'bg-white/80 border-neutral-200'} backdrop-blur-md sticky top-0 z-10`}>
+            <button onClick={() => setSelectedChatId(null)} className="text-[#76DE84] flex items-center font-bold"><ChevronLeft size={20} /> 訊息</button>
+            <div className="flex-1 flex flex-col items-center mr-10">
+              <span className="font-bold">{char.name}</span>
+              <span className="text-[10px] text-[#76DE84]">在線上</span>
+            </div>
+          </div>
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {char.messages.map((m, i) => (
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-[75%] px-4 py-2 rounded-[20px] text-sm ${m.role === 'user' ? 'bg-[#007AFF] text-white rounded-tr-none' : (isDarkMode ? 'bg-[#3a3a3c] text-white rounded-tl-none' : 'bg-white shadow-sm rounded-tl-none')}`}>
+                  {m.text}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+          <div className={`p-4 pb-10 border-t ${isDarkMode ? 'bg-[#1c1c1e] border-[#38383a]' : 'bg-white border-neutral-100'} flex gap-2`}>
+            <input 
+              className={`flex-1 rounded-full px-4 py-2 text-sm outline-none ${isDarkMode ? 'bg-[#2c2c2e]' : 'bg-neutral-100'}`}
+              placeholder="iMessage"
+              onKeyDown={async (e) => {
+                if (e.key === 'Enter') {
+                  const target = e.target as HTMLInputElement;
+                  if (!target.value) return;
+                  const text = target.value;
+                  target.value = '';
+                  setCharacters(prev => prev.map(c => c.id === char.id ? { ...c, messages: [...c.messages, { role: 'user', text } as Message] } : c));
+                  const response = await callUniversalAI([...char.messages, { role: 'user', text }], char.settings);
+                  setCharacters(prev => prev.map(c => c.id === char.id ? { ...c, messages: [...c.messages, { role: 'user', text }, { role: 'model', text: response } as Message] } : c));
+                }
+              }}
+            />
+          </div>
+        </div>
+      );
+    }
+    return (
+      <div className={`flex-1 flex flex-col h-full ${isDarkMode ? 'bg-black text-white' : 'bg-white text-black'}`}>
+        <div className="px-6 pt-16 pb-3 text-3xl font-black">訊息</div>
+        <div className="flex-1 overflow-y-auto">
+          {characters.map(c => (
+            <div key={c.id} onClick={() => setSelectedChatId(c.id)} className={`px-4 py-3 flex items-center gap-3 border-b ${isDarkMode ? 'border-white/5 active:bg-white/5' : 'border-neutral-100 active:bg-neutral-50'}`}>
+              <div className="w-14 h-14 rounded-full overflow-hidden bg-neutral-200 shrink-0 text-2xl flex items-center justify-center border border-white/10">
+                {c.avatar}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex justify-between items-center mb-0.5">
+                  <span className="font-bold text-[15px]">{c.name}</span>
+                  <span className="text-xs opacity-40">現在</span>
+                </div>
+                <div className="text-sm opacity-50 truncate">{c.messages[c.messages.length - 1]?.text || '尚無訊息'}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+const renderSettings = () => {
+    const t = TRANSLATIONS[language];
+    if (settingsTab !== 'main') {
+      return (
+        <div className={`flex-1 flex flex-col h-full ${isDarkMode ? 'bg-black text-white' : 'bg-[#f2f2f7] text-black'}`}>
+          <Header title={t[settingsTab as keyof typeof t] || '設定'} onBack={() => setSettingsTab('main')} isDarkMode={isDarkMode} />
+          <div className="p-4">
+             {settingsTab === 'general' && (
+               <div className={`rounded-xl overflow-hidden divide-y ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white'}`}>
+                 {Object.values(Language).map(lang => (
+                   <div key={lang} onClick={() => setLanguage(lang)} className="p-4 flex justify-between items-center cursor-pointer">
+                     <span>{lang}</span>
+                     {language === lang && <Check size={18} className="text-[#76DE84]" />}
+                   </div>
+                 ))}
+               </div>
+             )}
+          </div>
+        </div>
+      );
+    }
+    return (
+      <div className={`flex-1 flex flex-col h-full ${isDarkMode ? 'bg-black text-white' : 'bg-[#f2f2f7] text-black'}`}>
+        <div className="px-6 pt-16 pb-3 text-3xl font-black">{t.settings}</div>
+        <div className="p-4 space-y-4">
+           <div className={`rounded-xl overflow-hidden divide-y ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white'}`}>
+             <SettingsRow icon={<Globe size={18} color="white" />} iconBg="#007AFF" label={t.general} onClick={() => setSettingsTab('general')} />
+             <SettingsRow icon={<Palette size={18} color="white" />} iconBg="#FF2D55" label={t.appearance} onClick={() => setSettingsTab('appearance')} />
+           </div>
+        </div>
+      </div>
+    );
+  };
+
+const renderWheelApp = () => {
+    const handleSpin = () => {
+      if (isSpinning) return;
+      setIsSpinning(true);
+      const randomDeg = 1800 + Math.floor(Math.random() * 360);
+      setWheelRotation(prev => prev + randomDeg);
+      setTimeout(() => {
+        setIsSpinning(false);
+        const actualDeg = (wheelRotation + randomDeg) % 360;
+        const rewardIdx = Math.floor(((360 - actualDeg) % 360) / (360 / wheelRewards.length));
+        const amount = wheelRewards[rewardIdx];
+        setWalletBalance(prev => prev + amount);
+        addTransaction('income', amount, '每日轉盤獎金');
+        alert(`恭喜獲得 $${amount}！`);
+      }, 4000);
+    };
+    return (
+      <div className={`flex-1 flex flex-col items-center justify-center p-6 pt-20 ${isDarkMode ? 'bg-[#1c1c1e] text-white' : 'bg-amber-50 text-amber-900'}`}>
+        <h2 className="text-3xl font-black italic mb-10 tracking-tighter">DAILY SPIN</h2>
+        <div className="relative">
+          <motion.div animate={{ rotate: wheelRotation }} transition={{ duration: 4, ease: [0.13, 0, 0, 1] }} className="w-72 h-72 rounded-full border-[10px] border-amber-600 relative overflow-hidden shadow-2xl bg-white">
+            {wheelRewards.map((r, i) => (
+              <div key={i} className="absolute top-0 left-1/2 w-1 h-1/2 origin-bottom" style={{ transform: `translateX(-50%) rotate(${i * (360/wheelRewards.length)}deg)` }}>
+                <span className="mt-2 text-[10px] font-black">${r}</span>
+              </div>
+            ))}
+          </motion.div>
+          <div className="absolute top-[-10px] left-1/2 -translate-x-1/2 w-0 h-0 border-l-[15px] border-l-transparent border-r-[15px] border-r-transparent border-t-[30px] border-t-red-600 z-10" />
+        </div>
+        <button onClick={handleSpin} disabled={isSpinning} className="mt-14 px-12 py-4 rounded-full bg-amber-600 text-white font-black text-xl shadow-xl">{isSpinning ? 'SPINNING...' : 'SPIN NOW'}</button>
+      </div>
+    );
+  };
+
+const renderCharacters = () => (
+    <div className={`flex-1 flex flex-col h-full ${isDarkMode ? 'bg-black text-white' : 'bg-[#f2f2f7] text-black'}`}>
+      <div className="px-6 pt-16 pb-3 flex justify-between items-center">
+        <span className="text-3xl font-black">角色</span>
+        <button onClick={() => {
+          const name = prompt("角色名稱?");
+          if(name) setCharacters([...characters, { id: Date.now().toString(), name, avatar: getRandomAnimalEmoji(), messages: [], favorability: 0 } as any]);
+        }} className="text-[#76DE84] font-bold">+ 新增</button>
+      </div>
+      <div className="p-4 space-y-3">
+        {characters.map(c => (
+          <div key={c.id} className={`p-4 rounded-2xl flex items-center gap-4 ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white shadow-sm'}`}>
+            <div className="text-3xl">{c.avatar}</div>
+            <div className="flex-1 font-bold">{c.name}</div>
+            <div className="text-pink-500 font-bold">❤️ {c.favorability}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
 // --- 3. 完整的 App 內容渲染 ---
   const renderAppContent = () => {
-    // 這裡補上「訊息/聊天」的簡易邏輯，如果選中了某個角色就進入聊天室
     if (activeApp === 'messages') {
       if (selectedChatId) {
         const char = characters.find(c => c.id === selectedChatId);
@@ -3352,6 +3583,14 @@ export default function App() {
             </div>
           </div>
         );
+
+const renderAppContent = () => {
+    switch (activeApp) {
+      case 'messages': return renderMessagesApp(); // 連接到剛才貼的函式
+      case 'settings': return renderSettings();    // 連接到剛才貼的函式
+      case 'wheel': return renderWheelApp();       // 連接到剛才貼的函式
+      case 'characters': return renderCharacters(); // 連接到剛才貼的函式
+
       // 其他原本就有的 App (Fishing, Garden, Store...)
       case 'game': return <GameApp characters={characters} userProfile={userProfile} isDarkMode={isDarkMode} goHome={goHome} aiSettings={aiSettings} walletBalance={walletBalance} setWalletBalance={setWalletBalance} setCharacters={setCharacters} addTransaction={addTransaction} callUniversalAI={callUniversalAI} />;
       case 'garden': return <GardenApp patches={gardenPatches} isDarkMode={isDarkMode} goHome={goHome} onUnlockPatch={onUnlockPatch} onPlant={onPlant} onWater={onWater} onHarvest={onHarvest} />;
