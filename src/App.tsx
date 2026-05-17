@@ -3115,6 +3115,21 @@ export default function App() {
   const goHome = () => { setScreenState(ScreenState.Home); setActiveApp(null); setSelectedChatId(null); setIsJiggling(false); };
   const openApp = (app: AppId) => { if (!isJiggling) { setActiveApp(app); setScreenState(ScreenState.AppOpen); } };
 
+  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
+
+  const handleHomePointerDown = (id?: AppId) => {
+    if (isJiggling) return;
+    longPressTimer.current = setTimeout(() => {
+      setIsJiggling(true);
+    }, 800);
+  };
+
+  const handleHomePointerUp = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+    }
+  };
+
 // 記得補上這些函數，否則傳給 GardenApp 的 props 會是空的
   const onUnlockPatch = (id: number) => {
     if (walletBalance >= 300) {
