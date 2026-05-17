@@ -2277,11 +2277,35 @@ const [aiSettings, setAiSettings] = useState<AISettings>({
 }
 
 
-const GameApp = ({ characters, userProfile, isDarkMode, goHome, aiSettings, walletBalance, setWalletBalance, setCharacters, addTransaction }: { characters: Character[], userProfile: UserProfile, isDarkMode: boolean, goHome: () => void, aiSettings: AISettings, walletBalance: number, setWalletBalance: React.Dispatch<React.SetStateAction<number>>, setCharacters: React.Dispatch<React.SetStateAction<Character[]>>, addTransaction: (type: 'income' | 'expense' | 'transfer', amount: number, title: string) => void }) => {
+const GameApp = ({ 
+  characters, 
+  userProfile, 
+  isDarkMode, 
+  goHome, 
+  aiSettings, 
+  walletBalance, 
+  setWalletBalance, 
+  setCharacters, 
+  addTransaction,
+  callUniversalAI // <--- 1. 新增這一個屬性
+}: { 
+  characters: Character[], 
+  userProfile: UserProfile, 
+  isDarkMode: boolean, 
+  goHome: () => void, 
+  aiSettings: AISettings, 
+  walletBalance: number, 
+  setWalletBalance: React.Dispatch<React.SetStateAction<number>>, 
+  setCharacters: React.Dispatch<React.SetStateAction<Character[]>>, 
+  addTransaction: (type: 'income' | 'expense' | 'transfer', amount: number, title: string) => void,
+  callUniversalAI: (history: any[], systemPrompt: string) => Promise<string> // <--- 2. 新增這行類型定義
+}) => {
   const [activeGame, setActiveGame] = useState<GameType | null>(null);
   const [selectedChars, setSelectedChars] = useState<string[]>([]);
   const [gameState, setGameState] = useState<'setup' | 'playing' | 'ended'>('setup');
   const [isAutoMode, setIsAutoMode] = useState(false);
+  
+  // ... 後面的代碼保持不變
   
   // UNO State
   const [unoDeck, setUnoDeck] = useState<UnoCard[]>([]);
@@ -2486,22 +2510,36 @@ const GameApp = ({ characters, userProfile, isDarkMode, goHome, aiSettings, wall
     }
   };
 
-  // AI Uno move
+// AI Uno move (安全檢查版)
   useEffect(() => {
-    if (activeGame === 'uno' && gameState === 'playing' && (unoPlayers[unoTurn]?.id !== 'user' || isAutoMode)) {
-      const isUserTurn = unoPlayers[unoTurn]?.id === 'user';
-      const timer = setTimeout(() => {
-        const p = unoPlayers[unoTurn];
-        if (!p) return;
-        const top = unoDiscard[unoDiscard.length - 1];
-        if (!top) return;
-        const playableIdx = p.hand.findIndex(c => c.color === 'wild' || c.color === top.color || c.value === top.value);
-        if (playableIdx !== -1) playUnoCard(unoTurn, playableIdx);
-        else drawUnoCard(unoTurn);
-      }, isUserTurn ? 2000 : 1500);
-      return () => clearTimeout(timer);
+    // 1. 確保遊戲正在進行且陣列中有玩家
+    if (activeGame === 'uno' && gameState === 'playing' && unoPlayers.length > 0) {
+      const currentPlayer = unoPlayers[unoTurn];
+      
+      // 2. 如果當前玩家不存在，先不執行
+      if (!currentPlayer) return;
+
+      // 3. 判斷是否為 AI 輪次或自動模式
+      if (currentPlayer.id !== 'user' || isAutoMode) {
+        const isUserTurn = currentPlayer.id === 'user';
+        const timer = setTimeout(() => {
+          const top = unoDiscard[unoDiscard.length - 1];
+          if (!top) return;
+          
+          const playableIdx = currentPlayer.hand.findIndex(c => 
+            c.color === 'wild' || c.color === top.color || c.value === top.value
+          );
+          
+          if (playableIdx !== -1) {
+            playUnoCard(unoTurn, playableIdx);
+          } else {
+            drawUnoCard(unoTurn);
+          }
+        }, isUserTurn ? 2000 : 1500);
+        return () => clearTimeout(timer);
+      }
     }
-  }, [unoTurn, gameState, activeGame, isAutoMode]);
+  }, [unoTurn, gameState, activeGame, isAutoMode, unoPlayers, unoDiscard]); // 補齊依賴項
 
   // --- OLD MAID LOGIC ---
   const initOldMaid = () => {
@@ -2604,22 +2642,30 @@ const GameApp = ({ characters, userProfile, isDarkMode, goHome, aiSettings, wall
     }
   };
 
-  // AI Old Maid
+// AI Old Maid (修改版)
   useEffect(() => {
-    if (activeGame === 'oldmaid' && gameState === 'playing' && (omPlayers[unoTurn]?.id !== 'user' || isAutoMode)) {
-      const isUserTurn = omPlayers[unoTurn]?.id === 'user';
-      const timer = setTimeout(() => {
-        const fromIdx = (unoTurn + omPlayers.length - 1) % omPlayers.length;
-        if (omPlayers[fromIdx].hand.length > 0) {
-          const randIdx = Math.floor(Math.random() * omPlayers[fromIdx].hand.length);
-          omDraw(fromIdx, randIdx);
-        } else {
-          setUnoTurn((unoTurn + 1) % omPlayers.length);
-        }
-      }, isUserTurn ? 2500 : 2000);
-      return () => clearTimeout(timer);
+    // 加上 omPlayers.length > 0 的檢查
+    if (activeGame === 'oldmaid' && gameState === 'playing' && omPlayers.length > 0) {
+      const currentPlayer = omPlayers[unoTurn];
+      if (!currentPlayer) return; // 如果找不到當前玩家，安全退出
+
+      if (currentPlayer.id !== 'user' || isAutoMode) {
+        const isUserTurn = currentPlayer.id === 'user';
+        const timer = setTimeout(() => {
+          const fromIdx = (unoTurn + omPlayers.length - 1) % omPlayers.length;
+          
+          // 確保來源玩家存在且手上有牌
+          if (omPlayers[fromIdx] && omPlayers[fromIdx].hand.length > 0) {
+            const randIdx = Math.floor(Math.random() * omPlayers[fromIdx].hand.length);
+            omDraw(fromIdx, randIdx);
+          } else {
+            setUnoTurn((unoTurn + 1) % omPlayers.length);
+          }
+        }, isUserTurn ? 2500 : 2000);
+        return () => clearTimeout(timer);
+      }
     }
-  }, [unoTurn, gameState, activeGame, isAutoMode]);
+  }, [unoTurn, gameState, activeGame, isAutoMode, omPlayers]); // 補上依賴項
 
   // --- CHARADES LOGIC ---
   const TOPICS = ['蘋果', '跑步', '刷牙', '超人', '鋼琴', '大象', '煮飯', '睡覺', '游泳', '貓咪'];
@@ -2660,20 +2706,28 @@ const GameApp = ({ characters, userProfile, isDarkMode, goHome, aiSettings, wall
     }
   };
 
-  // AI guessing for user in Charades
+// AI guessing for user in Charades (修改版)
   useEffect(() => {
-    if (activeGame === 'charades' && gameState === 'playing' && isAutoMode && charadesPlayers[charadesDescriberIdx]?.id !== 'user') {
-      // If user is guessing and in auto mode, give a 30% chance to guess right every 5 seconds
-      const timer = setInterval(() => {
-        if (Math.random() > 0.7) {
-          handleCharadesGuess(charadesTopic);
-        }
-      }, 5000);
-      return () => clearInterval(timer);
-    }
-  }, [activeGame, gameState, isAutoMode, charadesDescriberIdx, charadesTopic]);
+    // 加上 charadesPlayers.length > 0 的檢查
+    if (activeGame === 'charades' && gameState === 'playing' && charadesPlayers.length > 0) {
+      const currentDescriber = charadesPlayers[charadesDescriberIdx];
+      if (!currentDescriber) return; // 安全檢查
 
-  const endCharadesGame = (players: GamePlayer[]) => {
+      if (isAutoMode && currentDescriber.id !== 'user') {
+        const timer = setInterval(() => {
+          if (Math.random() > 0.7) {
+            handleCharadesGuess(charadesTopic);
+          }
+        }, 5000);
+        return () => clearInterval(timer);
+      }
+    }
+  }, [activeGame, gameState, isAutoMode, charadesDescriberIdx, charadesTopic, charadesPlayers]);
+
+const endCharadesGame = (players: GamePlayer[]) => {
+    // 安全檢查：如果沒有玩家資料，直接返回不執行
+    if (!players || players.length === 0) return;
+
     let maxScore = -1;
     let minScore = 999;
     let winner = players[0];
@@ -2705,28 +2759,22 @@ const GameApp = ({ characters, userProfile, isDarkMode, goHome, aiSettings, wall
     setGameState('ended');
   };
 
-  const simulateAiDescriber = async (char: GamePlayer, topic: string) => {
+const simulateAiDescriber = async (char: GamePlayer, topic: string) => {
     const charData = characters.find(c => c.id === char.id);
     const systemPrompt = `你現在扮演一個角色：${charData?.name}。背景性格：${charData?.personality}。
 你正在和朋友玩「你說我猜」。題目是：${topic}。
 請用你的性格和說法描述這個題目，但絕對不能提到「${topic}」以及包含在裡面的字。
-長度約10-20個字。保持口吻。`;
+長度約10-20個字。保持口吻。不要輸出引號。`;
     
     try {
-      const model = genAI.getGenerativeModel({ model: aiSettings.model.trim() });
-      const result = await model.generateContent({
-        contents: [{ role: 'user', parts: [{ text: "請描述題目：" }] }],
-        config: { 
-          maxOutputTokens: 50,
-          systemInstruction: systemPrompt 
-        }
-      });
-      const text = result.text;
+      // 改用傳進來的 callUniversalAI 函數
+      const text = await callUniversalAI([], systemPrompt);
       if (text) {
         setCharadesChat(prev => [...prev, { author: char.name, text: text.trim() }]);
       }
     } catch (e) {
-      setCharadesChat(prev => [...prev, { author: char.name, text: `提示：它圓圓的，紅色的... (AI 錯誤)` }]);
+      console.error("Game AI Error:", e);
+      setCharadesChat(prev => [...prev, { author: char.name, text: `提示：這跟「${topic[0]}」開頭的東西有關喔... (連線失敗)` }]);
     }
   };
 
@@ -6573,6 +6621,7 @@ if (settingsSubPage === 'ai-config' as any) return (
         setWalletBalance={setWalletBalance}
         setCharacters={setCharacters}
         addTransaction={addTransaction}
+        callUniversalAI={callUniversalAI} 
       />;
       case 'photos': return <MailboxApp 
         isDarkMode={isDarkMode} 
