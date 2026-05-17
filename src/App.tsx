@@ -3437,7 +3437,7 @@ const [userProfile, setUserProfile] = useState<UserProfile>({
 const renderSettings = () => {
     const t = TRANSLATIONS[language];
 
-    // --- 子頁面：編輯個人資料 (當 settingsTab === 'general') ---
+    // --- A. 子頁面：編輯個人資料 ---
     if (settingsTab === 'general') {
       return (
         <div className={`flex-1 flex flex-col h-full ${isDarkMode ? 'bg-black text-white' : 'bg-[#f2f2f7] text-black'}`}>
@@ -3455,119 +3455,78 @@ const renderSettings = () => {
               </div>
               <span className="text-[10px] font-bold opacity-40 uppercase tracking-widest">點擊更換照片</span>
             </div>
-
             <div className={`rounded-2xl overflow-hidden divide-y ${isDarkMode ? 'bg-[#1c1c1e] divide-white/5' : 'bg-white divide-neutral-100 shadow-sm'}`}>
               <ProfileInput label="姓名" value={userProfile.name} isDark={isDarkMode} onChange={v => setUserProfile({...userProfile, name: v})} />
               <ProfileInput label="性別" value={userProfile.gender} isDark={isDarkMode} onChange={v => setUserProfile({...userProfile, gender: v})} />
               <ProfileInput label="年齡" value={userProfile.age} isDark={isDarkMode} onChange={v => setUserProfile({...userProfile, age: v})} />
               <ProfileInput label="簽名" value={userProfile.signature} isDark={isDarkMode} onChange={v => setUserProfile({...userProfile, signature: v})} />
             </div>
-            <p className="px-4 text-[11px] text-neutral-500 italic text-center">修改後，AI 角色將會使用這些資訊來與你互動。</p>
           </div>
         </div>
       );
     }
 
-    // --- 其他子頁面 (API, 圖示, 桌布, 存檔) ---
+    // --- B. 其他功能子頁面 (API, 圖示, 桌布, 存檔) ---
     if (settingsTab !== 'main') {
       return (
         <div className={`flex-1 flex flex-col h-full ${isDarkMode ? 'bg-black text-white' : 'bg-[#f2f2f7] text-black'}`}>
           <Header title={t[settingsTab as keyof typeof t] || '設定'} onBack={() => setSettingsTab('main')} isDarkMode={isDarkMode} />
           <div className="flex-1 overflow-y-auto p-4 space-y-6">
-            {/* 這裡保留你之前的 settingsTab === 'aiConfig' / 'icons' / 'appearance' / 'privacy' 邏輯 */}
-            {/* API 設定介面 */}
+            
             {settingsTab === 'aiConfig' && (
-              <div className="space-y-6 pb-20">
-                <div className={`rounded-2xl p-5 space-y-5 ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white shadow-sm'}`}>
-                  <div>
-                    <label className="text-[10px] font-bold opacity-30 block mb-1 uppercase tracking-widest">API Endpoint (網址)</label>
-                    <input 
-                      className="w-full bg-transparent outline-none text-sm border-b border-neutral-500/10 pb-1" 
-                      value={aiSettings.baseUrl} 
-                      onChange={e => setAiSettings({...aiSettings, baseUrl: e.target.value})} 
-                      placeholder="https://..."
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-bold opacity-30 block mb-1 uppercase tracking-widest">API Key (金鑰)</label>
-                    <input 
-                      type="password" 
-                      className="w-full bg-transparent outline-none text-sm border-b border-neutral-500/10 pb-1" 
-                      value={aiSettings.apiKey} 
-                      onChange={e => setAiSettings({...aiSettings, apiKey: e.target.value})} 
-                      placeholder="sk-..."
-                    />
-                  </div>
-
-                  {/* 抓取模型按鈕 */}
-                  <button 
-                    onClick={fetchModels}
-                    disabled={isFetchingModels}
-                    className={`w-full py-2 rounded-xl text-xs font-bold transition-all ${isFetchingModels ? 'bg-neutral-500 opacity-50' : 'bg-[#76DE84] text-white shadow-lg active:scale-95'}`}
-                  >
-                    {isFetchingModels ? '抓取中...' : '抓取模型清單 (Fetch Models)'}
-                  </button>
-
-                  <div>
-                    <label className="text-[10px] font-bold opacity-30 block mb-1 uppercase tracking-widest">選擇模型 (Model)</label>
-                    {availableModels.length > 0 ? (
-                      <select 
-                        className={`w-full bg-transparent outline-none text-sm border-b border-neutral-500/10 pb-1 appearance-none cursor-pointer ${isDarkMode ? 'text-white' : 'text-black'}`}
-                        value={aiSettings.model}
-                        onChange={e => setAiSettings({...aiSettings, model: e.target.value})}
-                      >
-                        {availableModels.map(m => <option key={m} value={m} className="text-black">{m}</option>)}
-                      </select>
-                    ) : (
-                      <input 
-                        className="w-full bg-transparent outline-none text-sm border-b border-neutral-500/10 pb-1" 
-                        value={aiSettings.model} 
-                        onChange={e => setAiSettings({...aiSettings, model: e.target.value})} 
-                        placeholder="請點擊上方按鈕或手動輸入"
-                      />
-                    )}
-                  </div>
+              <div className={`rounded-2xl p-5 space-y-5 ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white shadow-sm'}`}>
+                <div>
+                  <label className="text-[10px] font-bold opacity-30 block mb-1 uppercase tracking-widest">API Endpoint</label>
+                  <input className="w-full bg-transparent outline-none text-sm border-b border-neutral-500/10 pb-1" value={aiSettings.baseUrl} onChange={e => setAiSettings({...aiSettings, baseUrl: e.target.value})} />
                 </div>
-                <p className="px-2 text-[11px] text-neutral-500 italic">
-                  ※ 點擊「抓取模型清單」會嘗試連接您的 Endpoint 並獲取可用的模型。
-                </p>
+                <div>
+                  <label className="text-[10px] font-bold opacity-30 block mb-1 uppercase tracking-widest">API Key</label>
+                  <input type="password" className="w-full bg-transparent outline-none text-sm border-b border-neutral-500/10 pb-1" value={aiSettings.apiKey} onChange={e => setAiSettings({...aiSettings, apiKey: e.target.value})} placeholder="sk-..." />
+                </div>
+                <button onClick={fetchModels} disabled={isFetchingModels} className={`w-full py-2 rounded-xl text-xs font-bold ${isFetchingModels ? 'bg-neutral-500' : 'bg-[#76DE84] text-white shadow-lg'}`}>
+                  {isFetchingModels ? '抓取中...' : '抓取模型清單'}
+                </button>
+                <div>
+                  <label className="text-[10px] font-bold opacity-30 block mb-1 uppercase tracking-widest">選擇模型</label>
+                  <select className="w-full bg-transparent outline-none text-sm border-b border-neutral-500/10 pb-1" value={aiSettings.model} onChange={e => setAiSettings({...aiSettings, model: e.target.value})}>
+                    {availableModels.map(m => <option key={m} value={m} className="text-black">{m}</option>)}
+                    {availableModels.length === 0 && <option value={aiSettings.model}>{aiSettings.model}</option>}
+                  </select>
+                </div>
               </div>
             )}
-            
+
             {settingsTab === 'icons' && (
-               <div className="space-y-4">
-                 {installedApps.map(appId => (
-                   <div key={appId} className={`p-3 rounded-2xl flex items-center gap-4 ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white shadow-sm'}`}>
-                     <div onClick={() => handleImageUpload(url => setCustomIcons({...customIcons, [appId]: url}))} className="w-12 h-12 rounded-xl overflow-hidden bg-neutral-200 cursor-pointer border border-black/5 flex items-center justify-center">
-                       {customIcons[appId] ? <img src={customIcons[appId]} className="w-full h-full object-cover" /> : getIconElement(appId)}
-                     </div>
-                     <input className="font-bold text-sm bg-transparent outline-none flex-1" value={appNames[appId] || appId} onChange={e => setAppNames({...appNames, [appId]: e.target.value})} />
-                   </div>
-                 ))}
-               </div>
+              <div className="space-y-4">
+                {installedApps.map(appId => (
+                  <div key={appId} className={`p-3 rounded-2xl flex items-center gap-4 ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white shadow-sm'}`}>
+                    <div onClick={() => handleImageUpload(url => setCustomIcons({...customIcons, [appId]: url}))} className="w-12 h-12 rounded-xl overflow-hidden bg-neutral-200 cursor-pointer border border-black/5 flex items-center justify-center">
+                      {customIcons[appId] ? <img src={customIcons[appId]} className="w-full h-full object-cover" /> : getIconElement(appId)}
+                    </div>
+                    <div className="flex-1">
+                      <input className="font-bold text-sm bg-transparent outline-none w-full" value={appNames[appId] || appId} onChange={e => setAppNames({...appNames, [appId]: e.target.value})} />
+                      <div className="text-[10px] text-[#76DE84] font-medium">點擊圖示更換照片</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
 
             {settingsTab === 'appearance' && (
               <div className="space-y-8">
-                <div className="grid grid-cols-2 gap-4 px-2">
+                <div className="grid grid-cols-2 gap-4">
                   <WallpaperThumb label="鎖定畫面" src={lockWallpaper} onClick={() => handleImageUpload(url => setLockWallpaper(url))} />
                   <WallpaperThumb label="主畫面" src={homeWallpaper} onClick={() => handleImageUpload(url => setHomeWallpaper(url))} />
                 </div>
                 <div className={`rounded-2xl overflow-hidden divide-y ${isDarkMode ? 'bg-[#1c1c1e] divide-white/5' : 'bg-white divide-neutral-100 shadow-sm'}`}>
                    <div className="px-5 py-4 flex items-center justify-between">
-                     <div className="flex items-center gap-3">
-                       <div className="w-8 h-8 rounded-lg bg-neutral-800 flex items-center justify-center text-white"><Moon size={18} /></div>
-                       <span className="text-sm font-medium">深色模式</span>
-                     </div>
+                     <span className="text-sm font-medium">深色模式</span>
                      <button onClick={() => setIsDarkMode(!isDarkMode)} className={`w-12 h-6 rounded-full relative transition-colors ${isDarkMode ? 'bg-[#76DE84]' : 'bg-neutral-300'}`}>
                        <motion.div animate={{ x: isDarkMode ? 24 : 4 }} className="absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm" />
                      </button>
                    </div>
                    <div className="px-5 py-4 flex items-center justify-between">
-                     <div className="flex items-center gap-3">
-                       <div className="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center text-white"><Maximize size={18} /></div>
-                       <span className="text-sm font-medium">沉浸式全螢幕</span>
-                     </div>
+                     <span className="text-sm font-medium">沉浸式全螢幕</span>
                      <button onClick={() => setIsFullScreen(!isFullScreen)} className={`w-12 h-6 rounded-full relative transition-colors ${isFullScreen ? 'bg-[#76DE84]' : 'bg-neutral-300'}`}>
                        <motion.div animate={{ x: isFullScreen ? 24 : 4 }} className="absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm" />
                      </button>
@@ -3576,73 +3535,31 @@ const renderSettings = () => {
               </div>
             )}
 
-{/* 存檔管理 (導入與導出檔案) */}
             {settingsTab === 'privacy' && (
-              <div className="space-y-6 pb-20">
-                <div className="px-2">
-                  <h4 className="text-[10px] font-bold opacity-40 uppercase tracking-widest mb-3">資料備份</h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    {/* 導出按鈕 */}
-                    <button 
-                      onClick={handleExportSave}
-                      className={`flex flex-col items-center justify-center gap-3 p-6 rounded-[32px] transition-all active:scale-95 ${isDarkMode ? 'bg-[#1c1c1e] text-blue-400' : 'bg-white text-blue-500 shadow-sm'}`}
-                    >
-                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${isDarkMode ? 'bg-blue-500/10' : 'bg-blue-50'}`}>
-                        <Download size={28} />
-                      </div>
-                      <span className="font-bold text-sm text-neutral-600 dark:text-neutral-300">導出檔案</span>
-                    </button>
-
-                    {/* 導入按鈕 */}
-                    <button 
-                      onClick={handleImportSave}
-                      className={`flex flex-col items-center justify-center gap-3 p-6 rounded-[32px] transition-all active:scale-95 ${isDarkMode ? 'bg-[#1c1c1e] text-emerald-400' : 'bg-white text-emerald-500 shadow-sm'}`}
-                    >
-                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${isDarkMode ? 'bg-emerald-500/10' : 'bg-emerald-50'}`}>
-                        <Upload size={28} />
-                      </div>
-                      <span className="font-bold text-sm text-neutral-600 dark:text-neutral-300">導入檔案</span>
-                    </button>
-                  </div>
-                </div>
-
-                <div className="px-2 space-y-4">
-                  <h4 className="text-[10px] font-bold opacity-40 uppercase tracking-widest px-1">危險區域</h4>
-                  <button 
-                    onClick={() => {
-                      if (confirm("確定要重置所有玩家資料嗎？這將刪除包含釣魚、花園、訊息及所有自定義設定。此操作無法復原。")) {
-                        localStorage.clear();
-                        window.location.reload();
-                      }
-                    }}
-                    className={`w-full py-4 rounded-2xl flex items-center justify-center gap-2 font-bold transition-all active:bg-red-500 active:text-white ${isDarkMode ? 'bg-[#1c1c1e] text-red-500 border border-red-500/20' : 'bg-white text-red-500 shadow-sm'}`}
-                  >
-                    <Trash2 size={18} />
-                    重置所有資料
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <button onClick={handleExportSave} className={`flex flex-col items-center gap-3 p-6 rounded-[32px] ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white shadow-sm'}`}>
+                    <Download className="text-blue-500" size={28} /><span className="font-bold text-xs">導出存檔</span>
+                  </button>
+                  <button onClick={handleImportSave} className={`flex flex-col items-center gap-3 p-6 rounded-[32px] ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white shadow-sm'}`}>
+                    <Upload className="text-emerald-500" size={28} /><span className="font-bold text-xs">導入存檔</span>
                   </button>
                 </div>
-
-                <div className="p-4 text-center">
-                  <p className="text-[11px] text-neutral-500 italic">
-                    ※ 導出功能將下載一個 .txt 文字檔到您的設備中。<br/>
-                    ※ 導入時請選擇該檔案即可還原所有手機內容。
-                  </p>
-                </div>
+                <button onClick={() => { if(confirm("確定重置？")) { localStorage.clear(); location.reload(); }}} className="w-full py-4 text-red-500 font-bold">重置所有玩家資料</button>
               </div>
             )}
+          </div>
+        </div>
+      );
+    }
 
-    // --- 設定主頁面 (iOS 風格) ---
+    // --- C. 設定主頁面 ---
     return (
       <div className={`flex-1 flex flex-col h-full ${isDarkMode ? 'bg-black text-white' : 'bg-[#f2f2f7] text-black'}`}>
         <div className="px-6 pt-16 pb-3 text-3xl font-black">{t.settings}</div>
         <div className="flex-1 overflow-y-auto p-4 space-y-6">
-          
-          {/* 1. 唯一的個人資料入口 (置頂卡片) */}
-          <div 
-            onClick={() => setSettingsTab('general')} 
-            className={`p-4 rounded-2xl flex items-center gap-4 active:scale-95 transition-all cursor-pointer ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white shadow-sm'}`}
-          >
-            <div className="w-16 h-16 rounded-full overflow-hidden bg-neutral-200 border-2 border-white shadow-md">
+          <div onClick={() => setSettingsTab('general')} className={`p-4 rounded-2xl flex items-center gap-4 active:scale-95 transition-all ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white shadow-sm'}`}>
+            <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-white shadow-md bg-neutral-200">
               <AvatarImage src={userProfile.avatar} />
             </div>
             <div className="flex-1 min-w-0">
@@ -3651,38 +3568,25 @@ const renderSettings = () => {
             </div>
             <ChevronRight size={20} className="opacity-20" />
           </div>
-
-          {/* 2. 功能選單列表 (這裡不放「個人資料」了，避免重複) */}
           <div className={`rounded-2xl overflow-hidden divide-y ${isDarkMode ? 'bg-[#1c1c1e] divide-white/5' : 'bg-white divide-neutral-100 shadow-sm'}`}>
             <SettingsRow icon={<Key size={18} color="white" />} iconBg="#8E8E93" label="AI 助手與 API 設定" onClick={() => setSettingsTab('aiConfig')} />
-            <SettingsRow icon={<Grid size={18} color="white" />} iconBg="#AF52DE" label="更換圖示與自定義名稱" onClick={() => setSettingsTab('icons')} />
+            <SettingsRow icon={<Grid size={18} color="white" />} iconBg="#AF52DE" label="更換圖示與名稱" onClick={() => setSettingsTab('icons')} />
             <SettingsRow icon={<Image size={18} color="white" />} iconBg="#FF2D55" label="背景圖片與外觀" onClick={() => setSettingsTab('appearance')} />
             <SettingsRow icon={<Download size={18} color="white" />} iconBg="#007AFF" label="資料管理與存檔" onClick={() => setSettingsTab('privacy')} />
-          </div>
-
-          <div className="text-center py-4">
-             <span className="text-[10px] opacity-20 font-mono tracking-widest">OS VERSION 2.1.0</span>
           </div>
         </div>
       </div>
     );
   };
 
-const renderWheelApp = () => {
+  const renderWheelApp = () => {
     const handleSpin = () => {
-      // 檢查次數
-      if (wheelSpins <= 0) {
-        alert("今日抽獎次數已用完囉！");
-        return;
-      }
+      if (wheelSpins <= 0) { alert("今日次數已用完"); return; }
       if (isSpinning) return;
-
       setIsSpinning(true);
-      setWheelSpins(prev => prev - 1); // 扣除次數
-
+      setWheelSpins(prev => prev - 1);
       const randomDeg = 1800 + Math.floor(Math.random() * 360);
       setWheelRotation(prev => prev + randomDeg);
-      
       setTimeout(() => {
         setIsSpinning(false);
         const actualDeg = (wheelRotation + randomDeg) % 360;
@@ -3690,19 +3594,13 @@ const renderWheelApp = () => {
         const amount = wheelRewards[rewardIdx];
         setWalletBalance(prev => prev + amount);
         addTransaction('income', amount, '每日轉盤獎勵');
-        alert(`恭喜獲得 $${amount} 金幣！`);
+        alert(`獲得 $${amount}！`);
       }, 4000);
     };
-
     return (
       <div className={`flex-1 flex flex-col items-center justify-center p-6 pt-20 ${isDarkMode ? 'bg-[#1c1c1e] text-white' : 'bg-amber-50 text-amber-900'}`}>
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-black italic tracking-tighter">DAILY SPIN</h2>
-          <div className="mt-2 bg-amber-200/50 px-4 py-1 rounded-full inline-block">
-             <span className="text-xs font-bold text-amber-800">今日剩餘次數：{wheelSpins} / 3</span>
-          </div>
-        </div>
-        
+        <h2 className="text-3xl font-black italic mb-2 tracking-tighter">DAILY SPIN</h2>
+        <p className="text-xs font-bold opacity-50 mb-8 uppercase">Spins left: {wheelSpins} / 3</p>
         <div className="relative">
           <motion.div animate={{ rotate: wheelRotation }} transition={{ duration: 4, ease: [0.13, 0, 0, 1] }} className="w-72 h-72 rounded-full border-[10px] border-amber-600 relative overflow-hidden shadow-2xl bg-white">
             {wheelRewards.map((r, i) => (
@@ -3711,17 +3609,9 @@ const renderWheelApp = () => {
               </div>
             ))}
           </motion.div>
-          {/* 指針 */}
           <div className="absolute top-[-10px] left-1/2 -translate-x-1/2 w-0 h-0 border-l-[15px] border-l-transparent border-r-[15px] border-r-transparent border-t-[30px] border-t-red-600 z-10 drop-shadow-md" />
         </div>
-
-        <button 
-          onClick={handleSpin} 
-          disabled={isSpinning || wheelSpins <= 0} 
-          className={`mt-14 px-12 py-4 rounded-full font-black text-xl shadow-xl transition-all active:scale-95 ${
-            (isSpinning || wheelSpins <= 0) ? 'bg-neutral-400' : 'bg-amber-600 text-white hover:bg-amber-700'
-          }`}
-        >
+        <button onClick={handleSpin} disabled={isSpinning || wheelSpins <= 0} className={`mt-14 px-12 py-4 rounded-full font-black text-xl shadow-xl active:scale-95 transition-all ${isSpinning || wheelSpins <= 0 ? 'bg-neutral-400' : 'bg-amber-600 text-white'}`}>
           {isSpinning ? 'SPINNING...' : wheelSpins <= 0 ? 'TOMORROW' : 'SPIN NOW'}
         </button>
       </div>
