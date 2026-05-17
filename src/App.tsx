@@ -3142,8 +3142,14 @@ const [userProfile, setUserProfile] = useState<UserProfile>({
 
   const [walletBalance, setWalletBalance] = useState(300);
   const [characters, setCharacters] = useState<Character[]>([]);
+// --- API 相關狀態 ---
   const [aiSettings, setAiSettings] = useState<AISettings>({ 
-    apiKey: '', model: 'gemini-1.5-flash', baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/'
+    apiKey: '', 
+    model: 'gemini-1.5-flash', 
+    baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/' 
+  });
+  const [availableModels, setAvailableModels] = useState<string[]>([]);
+  const [isFetchingModels, setIsFetchingModels] = useState(false);
   });
   
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -3185,6 +3191,8 @@ const [userProfile, setUserProfile] = useState<UserProfile>({
     const newTx: Transaction = { id: Date.now().toString(), type, amount, title, timestamp: new Date().toLocaleString() };
     setTransactions(prev => [newTx, ...prev]);
   };
+
+
 
   const removeApp = (id: AppId) => setInstalledApps(prev => prev.filter(a => a !== id));
   const removeDockApp = (id: AppId) => setDockApps(prev => prev.filter(a => a !== id));
@@ -3246,10 +3254,39 @@ const [userProfile, setUserProfile] = useState<UserProfile>({
     });
   };
 
+// --- 自動抓取模型清單 ---
+  const fetchModels = async () => {
+    if (!aiSettings.apiKey || !aiSettings.baseUrl) {
+      alert("請先輸入 API Key 與 Endpoint 網址");
+      return;
+    }
+    setIsFetchingModels(true);
+    try {
+      const baseUrl = aiSettings.baseUrl.trim().replace(/\/$/, '').replace(/\/chat\/completions$/, '');
+      const url = `${baseUrl}/models`;
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${aiSettings.apiKey}`, 'Content-Type': 'application/json' }
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json();
+      const modelIds = data.data.map((m: any) => m.id);
+      setAvailableModels(modelIds);
+      if (modelIds.length > 0 && !modelIds.includes(aiSettings.model)) {
+        setAiSettings(prev => ({ ...prev, model: modelIds[0] }));
+      }
+      alert(`成功抓取 ${modelIds.length} 個模型！`);
+    } catch (err: any) {
+      alert("抓取失敗：" + err.message);
+    } finally { setIsFetchingModels(false); }
+  };
+
+  // --- 萬用連接器 ---
   const callUniversalAI = async (history: Message[], systemPrompt: string) => {
     if (!aiSettings.apiKey) return "請輸入 API Key";
     try {
-      const url = `${aiSettings.baseUrl.replace(/\/$/, '')}/chat/completions`;
+      const cleanBaseUrl = aiSettings.baseUrl.replace(/\/$/, '');
+      const url = cleanBaseUrl.endsWith('/chat/completions') ? cleanBaseUrl : `${cleanBaseUrl}/chat/completions`;
       const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${aiSettings.apiKey}` },
@@ -3373,16 +3410,62 @@ const renderSettings = () => {
           <Header title={t[settingsTab as keyof typeof t] || '設定'} onBack={() => setSettingsTab('main')} isDarkMode={isDarkMode} />
           <div className="flex-1 overflow-y-auto p-4 space-y-6">
             {/* 這裡保留你之前的 settingsTab === 'aiConfig' / 'icons' / 'appearance' / 'privacy' 邏輯 */}
+            {/* API 設定介面 */}
             {settingsTab === 'aiConfig' && (
-              <div className={`rounded-2xl p-4 space-y-4 ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white shadow-sm'}`}>
-                <div>
-                  <label className="text-[10px] font-bold opacity-30 block mb-1">API KEY</label>
-                  <input type="password" className="w-full bg-transparent outline-none text-sm border-b border-neutral-500/10 pb-1" value={aiSettings.apiKey} onChange={e => setAiSettings({...aiSettings, apiKey: e.target.value})} placeholder="sk-..." />
+              <div className="space-y-6 pb-20">
+                <div className={`rounded-2xl p-5 space-y-5 ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white shadow-sm'}`}>
+                  <div>
+                    <label className="text-[10px] font-bold opacity-30 block mb-1 uppercase tracking-widest">API Endpoint (網址)</label>
+                    <input 
+                      className="w-full bg-transparent outline-none text-sm border-b border-neutral-500/10 pb-1" 
+                      value={aiSettings.baseUrl} 
+                      onChange={e => setAiSettings({...aiSettings, baseUrl: e.target.value})} 
+                      placeholder="https://..."
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold opacity-30 block mb-1 uppercase tracking-widest">API Key (金鑰)</label>
+                    <input 
+                      type="password" 
+                      className="w-full bg-transparent outline-none text-sm border-b border-neutral-500/10 pb-1" 
+                      value={aiSettings.apiKey} 
+                      onChange={e => setAiSettings({...aiSettings, apiKey: e.target.value})} 
+                      placeholder="sk-..."
+                    />
+                  </div>
+
+                  {/* 抓取模型按鈕 */}
+                  <button 
+                    onClick={fetchModels}
+                    disabled={isFetchingModels}
+                    className={`w-full py-2 rounded-xl text-xs font-bold transition-all ${isFetchingModels ? 'bg-neutral-500 opacity-50' : 'bg-[#76DE84] text-white shadow-lg active:scale-95'}`}
+                  >
+                    {isFetchingModels ? '抓取中...' : '抓取模型清單 (Fetch Models)'}
+                  </button>
+
+                  <div>
+                    <label className="text-[10px] font-bold opacity-30 block mb-1 uppercase tracking-widest">選擇模型 (Model)</label>
+                    {availableModels.length > 0 ? (
+                      <select 
+                        className={`w-full bg-transparent outline-none text-sm border-b border-neutral-500/10 pb-1 appearance-none cursor-pointer ${isDarkMode ? 'text-white' : 'text-black'}`}
+                        value={aiSettings.model}
+                        onChange={e => setAiSettings({...aiSettings, model: e.target.value})}
+                      >
+                        {availableModels.map(m => <option key={m} value={m} className="text-black">{m}</option>)}
+                      </select>
+                    ) : (
+                      <input 
+                        className="w-full bg-transparent outline-none text-sm border-b border-neutral-500/10 pb-1" 
+                        value={aiSettings.model} 
+                        onChange={e => setAiSettings({...aiSettings, model: e.target.value})} 
+                        placeholder="請點擊上方按鈕或手動輸入"
+                      />
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <label className="text-[10px] font-bold opacity-30 block mb-1">MODEL</label>
-                  <input className="w-full bg-transparent outline-none text-sm border-b border-neutral-500/10 pb-1" value={aiSettings.model} onChange={e => setAiSettings({...aiSettings, model: e.target.value})} />
-                </div>
+                <p className="px-2 text-[11px] text-neutral-500 italic">
+                  ※ 點擊「抓取模型清單」會嘗試連接您的 Endpoint 並獲取可用的模型。
+                </p>
               </div>
             )}
             
