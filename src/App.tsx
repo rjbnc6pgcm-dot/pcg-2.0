@@ -3095,6 +3095,31 @@ export default function App() {
   const [isJiggling, setIsJiggling] = useState(false);
   const [typingChatId, setTypingChatId] = useState<string | null>(null);
 
+  const handleImageUpload = (callback: (url: string) => void) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*'; // 限制只能選圖片
+    
+    input.onchange = (e: any) => {
+      const file = e.target.files[0];
+      if (file) {
+        // 檢查檔案大小（選配：建議不要超過 1MB，因為 Base64 很佔空間）
+        if (file.size > 1024 * 1024) {
+          alert("圖片太大了，請選擇小於 1MB 的照片以維持系統流暢。");
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const base64 = event.target?.result as string;
+          callback(base64); // 把讀取完的圖片傳回去儲存
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+    input.click(); // 觸發點擊，打開手機的選擇選單
+  };
+
   // 設定與轉盤專用狀態
   const [editingCharId, setEditingCharId] = useState<string | null>(null);
   const [wheelSpins, setWheelSpins] = useState(3); // 初始次數設為 3
@@ -3106,8 +3131,12 @@ export default function App() {
   const [lockWallpaper, setLockWallpaper] = useState<string>("https://storage.googleapis.com/fun-app-assets/user-uploads/input_file_0.png");
   const [homeWallpaper, setHomeWallpaper] = useState<string>("https://storage.googleapis.com/fun-app-assets/user-uploads/input_file_0.png");
 
-  const [userProfile, setUserProfile] = useState<UserProfile>({ 
-    name: '使用者', age: '', gender: '', avatar: '🥕', signature: '今天也是美好的一天' 
+const [userProfile, setUserProfile] = useState<UserProfile>({ 
+    name: '使用者', 
+    age: '20', 
+    gender: '女', 
+    avatar: '🥕', 
+    signature: '今天也是美好的一天' 
   });
 
   const [walletBalance, setWalletBalance] = useState(300);
@@ -3305,30 +3334,94 @@ export default function App() {
 const renderSettings = () => {
     const t = TRANSLATIONS[language];
 
-    // --- 子頁面渲染邏輯 ---
     if (settingsTab !== 'main') {
       return (
         <div className={`flex-1 flex flex-col h-full ${isDarkMode ? 'bg-black text-white' : 'bg-[#f2f2f7] text-black'}`}>
           <Header title={t[settingsTab as keyof typeof t] || '設定'} onBack={() => setSettingsTab('main')} isDarkMode={isDarkMode} />
           <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-20">
             
-            {/* 個人資料編輯 */}
+            {/* 個人資料編輯：加入年齡、性別、頭像選擇 */}
             {settingsTab === 'general' && (
               <div className="space-y-6">
                 <div className="flex flex-col items-center py-4">
-                  <div className="w-20 h-20 rounded-full bg-neutral-200 shadow-inner mb-2 overflow-hidden flex items-center justify-center text-4xl border-2 border-white">
+                  <div 
+                    onClick={() => handleImageUpload(url => setUserProfile({...userProfile, avatar: url}))}
+                    className="w-24 h-24 rounded-full bg-neutral-200 shadow-lg mb-2 overflow-hidden flex items-center justify-center text-4xl border-4 border-white cursor-pointer relative group"
+                  >
                     <AvatarImage src={userProfile.avatar} />
+                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                      <CameraIcon size={24} color="white" />
+                    </div>
                   </div>
-                  <button onClick={() => {
-                    const icon = prompt('輸入新的 Emoji 或頭像網址', userProfile.avatar);
-                    if(icon) setUserProfile({...userProfile, avatar: icon});
-                  }} className="text-[#76DE84] text-xs font-bold">更換大頭照</button>
+                  <span className="text-[10px] font-bold opacity-40">點擊大頭照更換照片</span>
                 </div>
-                <div className={`rounded-xl overflow-hidden divide-y ${isDarkMode ? 'bg-[#1c1c1e] divide-white/5' : 'bg-white divide-neutral-100'}`}>
-                  <ProfileInput label="你的姓名" value={userProfile.name} isDark={isDarkMode} onChange={v => setUserProfile({...userProfile, name: v})} />
+                <div className={`rounded-xl overflow-hidden divide-y ${isDarkMode ? 'bg-[#1c1c1e] divide-white/5' : 'bg-white divide-neutral-100 shadow-sm'}`}>
+                  <ProfileInput label="姓名" value={userProfile.name} isDark={isDarkMode} onChange={v => setUserProfile({...userProfile, name: v})} />
+                  <ProfileInput label="性別" value={userProfile.gender} isDark={isDarkMode} onChange={v => setUserProfile({...userProfile, gender: v})} />
+                  <ProfileInput label="年齡" value={userProfile.age} isDark={isDarkMode} onChange={v => setUserProfile({...userProfile, age: v})} />
                   <ProfileInput label="個人簽名" value={userProfile.signature} isDark={isDarkMode} onChange={v => setUserProfile({...userProfile, signature: v})} />
                 </div>
-                <div className="px-4 text-xs text-neutral-500">這些資訊將用於與 AI 角色互動時的稱呼。</div>
+              </div>
+            )}
+
+            {/* 背景圖片與外觀：iOS 深色模式切換 */}
+            {settingsTab === 'appearance' && (
+              <div className="space-y-8">
+                <div className="px-2">
+                  <h4 className="text-xs font-bold opacity-40 uppercase mb-3">桌布設定</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <WallpaperThumb label="鎖定畫面" src={lockWallpaper} onClick={() => handleImageUpload(url => setLockWallpaper(url))} />
+                    <WallpaperThumb label="主畫面" src={homeWallpaper} onClick={() => handleImageUpload(url => setHomeWallpaper(url))} />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <h4 className="text-xs font-bold opacity-40 uppercase px-2">外觀模式</h4>
+                  <div className={`rounded-2xl overflow-hidden ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white shadow-sm'}`}>
+                    {/* 深色模式切換 */}
+                    <div className="px-5 py-4 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-neutral-800 flex items-center justify-center text-white"><Moon size={18} /></div>
+                        <span className="text-sm font-medium">深色模式</span>
+                      </div>
+                      <button onClick={() => setIsDarkMode(!isDarkMode)} className={`w-12 h-6 rounded-full relative transition-colors ${isDarkMode ? 'bg-[#76DE84]' : 'bg-neutral-300'}`}>
+                        <motion.div animate={{ x: isDarkMode ? 24 : 4 }} className="absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm" />
+                      </button>
+                    </div>
+                    {/* 全螢幕模式 */}
+                    <div className="px-5 py-4 flex items-center justify-between border-t border-neutral-500/10">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center text-white"><Maximize size={18} /></div>
+                        <span className="text-sm font-medium">沉浸式全螢幕</span>
+                      </div>
+                      <button onClick={() => setIsFullScreen(!isFullScreen)} className={`w-12 h-6 rounded-full relative transition-colors ${isFullScreen ? 'bg-[#76DE84]' : 'bg-neutral-300'}`}>
+                        <motion.div animate={{ x: isFullScreen ? 24 : 4 }} className="absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 更換圖示與名稱：點擊開啟相簿 */}
+            {settingsTab === 'icons' && (
+              <div className="space-y-4">
+                <p className="text-xs text-neutral-500 px-2 italic">點擊下方圖示可從相簿選擇新照片</p>
+                {installedApps.map(appId => (
+                  <div key={appId} className={`p-4 rounded-xl flex items-center gap-4 ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white shadow-sm'}`}>
+                    <div 
+                      onClick={() => handleImageUpload(url => setCustomIcons({...customIcons, [appId]: url}))}
+                      className="w-12 h-12 rounded-xl overflow-hidden flex items-center justify-center bg-neutral-200 cursor-pointer border border-black/5"
+                    >
+                      {customIcons[appId] ? <img src={customIcons[appId]} className="w-full h-full object-cover" /> : getIconElement(appId)}
+                    </div>
+                    <div className="flex-1">
+                      <input className="font-bold text-sm bg-transparent outline-none w-full" value={appNames[appId] || appId} 
+                        onChange={e => setAppNames({...appNames, [appId]: e.target.value})} placeholder="修改 App 名稱" />
+                      <div className="text-[10px] text-[#76DE84] font-medium mt-1">點擊左側圖示更換照片</div>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
 
@@ -3350,47 +3443,6 @@ const renderSettings = () => {
                   </div>
                 </div>
                 <p className="text-[11px] text-neutral-500 px-2 italic">※ 預設支援 OpenAI 格式。若使用 Gemini 請確保網址正確。</p>
-              </div>
-            )}
-
-            {/* 更換圖示與名稱 */}
-            {settingsTab === 'icons' && (
-              <div className="space-y-4">
-                {installedApps.map(appId => (
-                  <div key={appId} className={`p-4 rounded-xl flex items-center gap-4 ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white'}`}>
-                    <div className="w-10 h-10 rounded-lg overflow-hidden flex items-center justify-center bg-neutral-200">
-                      {customIcons[appId] ? <img src={customIcons[appId]} className="w-full h-full object-cover" /> : getIconElement(appId)}
-                    </div>
-                    <div className="flex-1 space-y-1">
-                      <input className="font-bold text-sm bg-transparent outline-none w-full" value={appNames[appId] || appId} 
-                        onChange={e => setAppNames({...appNames, [appId]: e.target.value})} placeholder="修改 App 名稱" />
-                      <input className="text-[10px] opacity-40 bg-transparent outline-none w-full" value={customIcons[appId] || ''} 
-                        onChange={e => setCustomIcons({...customIcons, [appId]: e.target.value})} placeholder="輸入圖示網址 (留空預設)" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* 背景圖片與全屏 */}
-            {settingsTab === 'appearance' && (
-              <div className="space-y-8">
-                <div className="grid grid-cols-2 gap-4">
-                  <WallpaperThumb label="鎖定畫面" src={lockWallpaper} onClick={() => {const u = prompt('網址?', lockWallpaper); if(u) setLockWallpaper(u)}} />
-                  <WallpaperThumb label="主畫面" src={homeWallpaper} onClick={() => {const u = prompt('網址?', homeWallpaper); if(u) setHomeWallpaper(u)}} />
-                </div>
-                <div className={`rounded-xl overflow-hidden divide-y ${isDarkMode ? 'bg-[#1c1c1e] divide-white/5' : 'bg-white divide-neutral-100'}`}>
-                  <div className="px-5 py-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center text-white"><Maximize size={18} /></div>
-                      <span className="text-sm font-medium">沈浸式全螢幕模式</span>
-                    </div>
-                    <button onClick={() => setIsFullScreen(!isFullScreen)} className={`w-12 h-6 rounded-full relative transition-colors ${isFullScreen ? 'bg-[#76DE84]' : 'bg-neutral-300'}`}>
-                      <motion.div animate={{ x: isFullScreen ? 24 : 4 }} className="absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm" />
-                    </button>
-                  </div>
-                </div>
-                <p className="text-[11px] text-center text-neutral-500 italic">※ 全螢幕模式將移除手機邊框，適合在行動裝置上使用。</p>
               </div>
             )}
 
@@ -3441,7 +3493,16 @@ const renderSettings = () => {
       <div className={`flex-1 flex flex-col h-full ${isDarkMode ? 'bg-black text-white' : 'bg-[#f2f2f7] text-black'}`}>
         <div className="px-6 pt-16 pb-3 text-3xl font-black">{t.settings}</div>
         <div className="flex-1 overflow-y-auto p-4 space-y-6">
-          
+          <div onClick={() => setSettingsTab('general')} className={`p-4 rounded-2xl flex items-center gap-4 active:scale-95 transition-all ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white shadow-sm'}`}>
+            <div className="w-16 h-16 rounded-full overflow-hidden bg-neutral-200 border-2 border-white shadow-md">
+              <AvatarImage src={userProfile.avatar} />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-bold text-lg leading-tight">{userProfile.name}</h3>
+              <p className="text-xs opacity-50 truncate w-48">{userProfile.gender} · {userProfile.age}歲 · {userProfile.signature}</p>
+            </div>
+            <ChevronRight size={20} className="opacity-20" />
+          </div>
           {/* 個人資料入口 (頂部) */}
           <div onClick={() => setSettingsTab('general')} className={`p-4 rounded-2xl flex items-center gap-4 active:opacity-70 transition-opacity ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white shadow-sm'}`}>
             <div className="w-16 h-16 rounded-full overflow-hidden bg-neutral-200 border-2 border-white">
