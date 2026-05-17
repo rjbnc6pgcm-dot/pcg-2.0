@@ -3478,78 +3478,117 @@ const [userProfile, setUserProfile] = useState<UserProfile>({
     );
   };
 
-  const renderCharacters = () => {
+const renderCharacters = () => {
+    // 1. 如果有選中角色 ID，顯示「編輯/詳細資料頁面」
     if (editingCharId) {
       const char = characters.find(c => c.id === editingCharId);
       if (!char) return null;
       const update = (f: keyof Character, v: any) => setCharacters(prev => prev.map(c => c.id === editingCharId ? { ...c, [f]: v } : c));
 
-      if (charTab === 'peeper') return (
-        <div className={`flex-1 flex flex-col h-full ${isDarkMode ? 'bg-black text-white' : 'bg-[#f2f2f7] text-black'} overflow-y-auto`}>
-          <Header title="偷窺者模式" onBack={() => setCharTab('edit')} isDarkMode={isDarkMode} />
-          <div className="p-6 space-y-6 pb-20">
-            <div className={`p-8 rounded-[40px] text-center space-y-4 ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white shadow-xl'}`}>
-              <div className="w-20 h-20 rounded-full overflow-hidden mx-auto border-4 border-[#5856D6]"><AvatarImage src={char.avatar} /></div>
-              <h4 className="font-black text-xl">{char.name} 的隱私錢包</h4>
-              <div className="text-5xl font-black text-[#5856D6]">${char.walletBalance || 0}</div>
-              <p className="text-[10px] font-bold opacity-30 uppercase tracking-widest">近期動態</p>
-            </div>
-            <div className="space-y-3">
-              {char.activityLogs?.map((log, i) => <div key={i} className="text-xs opacity-70 border-l-2 border-[#76DE84] pl-3 py-1 bg-white/5 p-2 rounded-r-lg">{log}</div>)}
-              {(!char.activityLogs || char.activityLogs.length === 0) && <p className="text-center opacity-20 py-10 italic">暫無紀錄</p>}
-            </div>
-          </div>
-        </div>
-      );
-
-      return (
-        <div className={`flex-1 flex flex-col h-full ${isDarkMode ? 'bg-black text-white' : 'bg-[#f2f2f7] text-black'} overflow-y-auto pb-20`}>
-          <Header title="編輯角色" onBack={() => setEditingCharId(null)} isDarkMode={isDarkMode} />
-          <div className="p-4 space-y-6">
-            <div className="flex flex-col items-center gap-2">
-              <div onClick={() => handleImageUpload(u => update('avatar', u))} className="w-20 h-20 rounded-full overflow-hidden border-4 border-white shadow-lg cursor-pointer"><AvatarImage src={char.avatar} className="w-full h-full object-cover" /></div>
-              <span className="text-[10px] font-bold opacity-40 uppercase">點擊頭像更換</span>
-            </div>
-            <div className={`rounded-xl overflow-hidden divide-y ${isDarkMode ? 'bg-[#1c1c1e] divide-white/5' : 'bg-white shadow-sm'}`}>
-              <ProfileInput label="姓名" value={char.name} isDark={isDarkMode} onChange={(v:any) => update('name', v)} />
-              <ProfileInput label="對話風格" value={char.customPrompt} isDark={isDarkMode} onChange={(v:any) => update('customPrompt', v)} />
-              <div className="px-5 py-3 flex justify-between items-center text-sm"><span>主動傳訊間隔 (小時)</span><input type="number" className="w-16 bg-neutral-200/50 rounded px-2" value={char.proactiveInterval} onChange={e => update('proactiveInterval', parseInt(e.target.value))} /></div>
-            </div>
-            <div className="space-y-2">
-              <label className="text-xs font-bold opacity-40 px-2 uppercase">行為自動化與權限</label>
-              <div className={`rounded-xl divide-y ${isDarkMode ? 'bg-[#1c1c1e] divide-white/5' : 'bg-white shadow-sm'}`}>
-                <div className="px-5 py-3 flex justify-between items-center text-sm"><span>自動參與釣魚</span><input type="checkbox" checked={char.proactiveFishing} onChange={e => update('proactiveFishing', e.target.checked)} /></div>
-                <div className="px-5 py-3 flex justify-between items-center text-sm"><span>自動售出魚貨</span><input type="checkbox" checked={char.autoSellFish} onChange={e => update('autoSellFish', e.target.checked)} /></div>
-                <div className="px-5 py-3 flex justify-between items-center text-sm"><span>自動澆水助手</span><input type="checkbox" checked={char.proactiveGarden} onChange={e => update('proactiveGarden', e.target.checked)} /></div>
+      // --- 偷窺者模式分頁 ---
+      if (charTab === 'peeper') {
+        return (
+          <div className={`flex-1 flex flex-col h-full ${isDarkMode ? 'bg-black text-white' : 'bg-[#f2f2f7] text-black'} overflow-y-auto`}>
+            <Header title="偷窺者模式" onBack={() => setCharTab('edit')} isDarkMode={isDarkMode} />
+            <div className="p-6 space-y-6 pb-20">
+              <div className={`p-8 rounded-[40px] text-center space-y-4 ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white shadow-xl'} border ${isDarkMode ? 'border-white/5' : 'border-neutral-100'}`}>
+                <div className="w-20 h-20 rounded-full overflow-hidden mx-auto border-4 border-[#5856D6] shadow-lg">
+                  <AvatarImage src={char.avatar} />
+                </div>
+                <h4 className="font-black text-xl">{char.name} 的隱私錢包</h4>
+                <div className="text-5xl font-black text-[#5856D6] tracking-tighter">${char.walletBalance || 0}</div>
+                <p className="text-[10px] font-bold opacity-30 uppercase tracking-widest">Authorized Access Only</p>
+              </div>
+              <div className="space-y-3">
+                <h5 className="text-xs font-bold opacity-40 uppercase px-2">近期動態紀錄</h5>
+                <div className={`rounded-2xl p-4 space-y-3 ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white shadow-sm'}`}>
+                  {char.activityLogs?.map((log, i) => (
+                    <div key={i} className="text-xs opacity-70 border-l-2 border-[#76DE84] pl-3 py-1">{log}</div>
+                  ))}
+                  {(!char.activityLogs || char.activityLogs.length === 0) && <p className="text-center opacity-30 py-4 italic">暫無紀錄</p>}
+                </div>
               </div>
             </div>
-            <div className="space-y-4 pt-4">
-               <button onClick={() => setCharTab('peeper')} className="w-full py-3 bg-[#5856D6] text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-transform"><Eye size={18} /> 進入偷窺者模式</button>
-               <button onClick={() => {if(confirm("刪除角色？")){setCharacters(prev => prev.filter(c => c.id !== char.id)); setEditingCharId(null);}}} className="w-full py-3 text-red-500 font-bold">刪除角色</button>
+          </div>
+        );
+      }
+
+      // --- 編輯角色分頁 ---
+      return (
+        <div className={`flex-1 flex flex-col h-full ${isDarkMode ? 'bg-black text-white' : 'bg-[#f2f2f7] text-black'} overflow-y-auto pb-20`}>
+          <Header title={`編輯 ${char.name}`} onBack={() => { setEditingCharId(null); setCharTab('list'); }} isDarkMode={isDarkMode} />
+          <div className="p-4 space-y-6">
+            <div className="flex flex-col items-center gap-2">
+              <div onClick={() => handleImageUpload(u => update('avatar', u))} className="w-20 h-20 rounded-full overflow-hidden border-4 border-white shadow-lg cursor-pointer relative group">
+                <AvatarImage src={char.avatar} className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white"><CameraIcon size={20} /></div>
+              </div>
+              <span className="text-[10px] font-bold opacity-40 uppercase">點擊更換大頭照</span>
+            </div>
+
+            <div className={`rounded-xl overflow-hidden divide-y ${isDarkMode ? 'bg-[#1c1c1e] divide-white/5' : 'bg-white shadow-sm'}`}>
+              <ProfileInput label="角色姓名" value={char.name} isDark={isDarkMode} onChange={(v:any) => update('name', v)} />
+              <ProfileInput label="妳對他的暱稱" value={char.charNickname} isDark={isDarkMode} onChange={(v:any) => update('charNickname', v)} />
+              <ProfileInput label="性格簽名" value={char.signature} isDark={isDarkMode} onChange={(v:any) => update('signature', v)} />
+              <ProfileInput label="出沒地點" value={char.location} isDark={isDarkMode} onChange={(v:any) => update('location', v)} />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-bold opacity-40 px-2 uppercase">行為自動化權限</label>
+              <div className={`rounded-xl divide-y ${isDarkMode ? 'bg-[#1c1c1e] divide-white/5' : 'bg-white shadow-sm'}`}>
+                <div className="px-5 py-3 flex justify-between items-center text-sm"><span>自動參與釣魚</span><input type="checkbox" checked={char.proactiveFishing} onChange={e => update('proactiveFishing', e.target.checked)} className="accent-[#76DE84]" /></div>
+                <div className="px-5 py-3 flex justify-between items-center text-sm"><span>自動售出魚貨</span><input type="checkbox" checked={char.autoSellFish} onChange={e => update('autoSellFish', e.target.checked)} className="accent-[#76DE84]" /></div>
+                <div className="px-5 py-3 flex justify-between items-center text-sm"><span>自動澆水助手</span><input type="checkbox" checked={char.proactiveGarden} onChange={e => update('proactiveGarden', e.target.checked)} className="accent-[#76DE84]" /></div>
+                <div className="px-5 py-3 flex justify-between items-center text-sm"><span>允許向我轉帳</span><input type="checkbox" checked={char.canTransferToUser} onChange={e => update('canTransferToUser', e.target.checked)} className="accent-[#76DE84]" /></div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <button onClick={() => setCharTab('peeper')} className="w-full py-4 bg-[#5856D6] text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-transform">
+                <Eye size={20} /> 進入偷窺者模式
+              </button>
+              <button onClick={() => { if(confirm("確定刪除？")) { setCharacters(p => p.filter(c => c.id !== char.id)); setEditingCharId(null); } }} className="w-full py-4 text-red-500 font-bold bg-red-500/5 rounded-2xl">
+                刪除角色夥伴
+              </button>
             </div>
           </div>
         </div>
       );
     }
+
+    // 2. 顯示角色列表主頁
     return (
       <div className={`flex-1 flex flex-col h-full ${isDarkMode ? 'bg-black text-white' : 'bg-[#f2f2f7] text-black'} overflow-y-auto pb-20`}>
         <div className="px-6 pt-16 pb-3 flex justify-between items-center sticky top-0 z-10 bg-inherit backdrop-blur-md">
-          <span className="text-3xl font-black text-[#76DE84]">CHARACTERS</span>
+          <span className="text-3xl font-black text-[#76DE84] tracking-tighter">CHARACTERS</span>
           <button onClick={() => {
             const newId = Date.now().toString();
-            setCharacters([...characters, { id: newId, name: '新角色', avatar: getRandomAnimalEmoji(), messages: [], favorability: 0, walletBalance: 300, minResponseTime: 3, maxResponseTime: 10, maxMessagesPerTurn: 3 } as any]);
-            setEditingCharId(newId); setCharTab('edit');
-          }} className="w-10 h-10 rounded-full bg-[#76DE84] text-white flex items-center justify-center shadow-lg active:scale-90 transition-transform"><Plus size={24} /></button>
+            const newCharObj: any = { 
+              id: newId, name: '新角色', avatar: getRandomAnimalEmoji(), 
+              messages: [], walletBalance: 300, favorability: 0, 
+              location: '學校、公園', proactiveFishing: true 
+            };
+            setCharacters([...characters, newCharObj]);
+            setEditingCharId(newId);
+            setCharTab('edit');
+          }} className="w-10 h-10 rounded-full bg-[#76DE84] text-white flex items-center justify-center shadow-lg active:scale-90 transition-transform">
+            <Plus size={24} />
+          </button>
         </div>
         <div className="p-4 space-y-3">
           {characters.map(c => (
-            <div key={c.id} onClick={() => {setEditingCharId(c.id); setCharTab('edit');}} className={`p-4 rounded-3xl flex items-center gap-4 ${isDarkMode ? 'bg-[#1c1c1e] border-white/5' : 'bg-white border-neutral-100'} border shadow-sm active:scale-95 transition-all cursor-pointer`}>
-              <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-white"><AvatarImage src={c.avatar} className="w-full h-full object-cover" /></div>
-              <div className="flex-1"><div className="font-bold text-lg">{c.name}</div><div className="text-xs opacity-50 italic">{c.personality || '尚未設定性格'}</div></div>
-              <div className="text-pink-500 font-black">❤️ {c.favorability}</div>
+            <div key={c.id} onClick={() => { setEditingCharId(c.id); setCharTab('edit'); }} className={`p-4 rounded-3xl flex items-center gap-4 ${isDarkMode ? 'bg-[#1c1c1e] border-white/5' : 'bg-white border-neutral-100'} border shadow-sm active:scale-95 transition-all cursor-pointer`}>
+              <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-white">
+                <AvatarImage src={c.avatar} className="w-full h-full object-cover" />
+              </div>
+              <div className="flex-1">
+                <div className="font-bold text-lg">{c.name}</div>
+                <div className="text-xs opacity-50 italic truncate w-40">{c.signature || '暫無個性簽名'}</div>
+              </div>
+              <div className="text-pink-500 font-black text-sm">❤️ {c.favorability}</div>
             </div>
           ))}
-          {characters.length === 0 && <div className="py-20 text-center text-neutral-400">尚無角色，點擊上方 + 新增</div>}
+          {characters.length === 0 && <div className="py-20 text-center text-neutral-400">目前沒有角色，點擊 + 建立</div>}
         </div>
       </div>
     );
@@ -3827,7 +3866,7 @@ const renderCharacters = () => {
             const newId = Date.now().toString();
             const newChar: Character = {
               id: newId, name: '新角色', avatar: '🐱', gender: '女', age: '18',
-              personality: '溫柔', charNickname: '笨蛋、親愛的', userNickname: '主人、小貓', signature: '很高興認識你', char.location: '學校、公司',
+              personality: '溫柔', charNickname: '笨蛋、親愛的', userNickname: '主人、小貓', signature: '很高興認識你', location: '學校、公司',
               settings: '你是一個親切的聊天對象。', favorability: 0, messages: [], memos: [],
               minResponseTime: 1, maxResponseTime: 3, maxMessagesPerTurn: 1
             };
