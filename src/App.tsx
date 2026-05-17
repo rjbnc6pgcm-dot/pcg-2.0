@@ -3244,6 +3244,7 @@ export default function App() {
     <div className={`min-h-screen bg-[#F0F0F0] flex items-center justify-center p-4 transition-all ${isFullScreen ? 'p-0 bg-black' : ''}`}>
       <div className="relative w-full max-w-[375px] h-[812px] bg-black rounded-[55px] border-[12px] border-neutral-900 shadow-2xl overflow-hidden flex flex-col">
         
+        {/* Status Bar */}
         <div className="absolute top-0 left-0 right-0 h-11 px-6 flex justify-between items-end pb-1.5 z-[100] text-white pointer-events-none">
           <span className="text-[14px] font-semibold">{currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
           <div className="flex gap-1.5 items-center"><Signal size={16} /><Wifi size={16} /><Battery size={20} /></div>
@@ -3291,47 +3292,28 @@ export default function App() {
       </div>
     </div>
   );
-} // 結束 App 函式
-
-        {/* Navigation Indicator Overlay for Home Screen */}
-        {screenState === ScreenState.Home && (
-          <div onClick={goHome} className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-36 h-1.5 bg-white/40 rounded-full z-[100] cursor-pointer hover:bg-white/60 transition-colors" />
-        )}
-      </div>
-    </div>
-  );
 }
 
-const ProfileInput = ({ label, value, isDark, onChange }: { label: string, value: string, isDark: boolean, onChange: (v: string) => void }) => (
+// --- 輔助組件 (定義在 App 外面) ---
+
+const ProfileInput = ({ label, value, isDark, onChange }: any) => (
   <div className="px-5 py-3 flex items-center"><span className="w-20 text-sm font-medium">{label}</span>
     <input className={`flex-1 text-sm outline-none bg-transparent ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`} value={value} onChange={e => onChange(e.target.value)} placeholder={`請輸入${label}`} /></div>
 );
 
-const WallpaperThumb = ({ label, src, onClick }: { label: string, src: string, onClick: () => void }) => (
+const WallpaperThumb = ({ label, src, onClick }: any) => (
   <div className="flex flex-col items-center gap-2 text-black"><span className="text-[10px] font-bold opacity-40 uppercase tracking-wider">{label}</span>
     <div className="w-24 h-48 bg-neutral-200 rounded-xl overflow-hidden border-2 border-white shadow-sm relative group cursor-pointer" onClick={onClick}>
       <img src={src} className="w-full h-full object-cover" /><div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity"><Plus /></div></div></div>
 );
 
-const SettingsRow = ({ icon, iconBg, label, onClick }: { icon: React.ReactNode, iconBg: string, label: string, onClick: () => void }) => (
+const SettingsRow = ({ icon, iconBg, label, onClick }: any) => (
   <div onClick={onClick} className="px-5 py-3 flex items-center gap-3 cursor-pointer active:bg-neutral-800/10 transition-colors">
     <div className="w-[30px] h-[30px] rounded-[7px] flex items-center justify-center" style={{ backgroundColor: iconBg }}>{icon}</div>
     <span className="flex-1 font-medium text-sm">{label}</span><ChevronRight className="text-neutral-400" size={16} /></div>
 );
 
-interface AppIconProps {
-  id: AppId;
-  label: string;
-  color: string;
-  icon: React.ReactNode;
-  isDarkMode: boolean;
-  isJiggling?: boolean;
-  customSrc?: string;
-  onClick: () => void;
-  onRemove: () => void;
-}
-
-const AppIcon = ({ id, label, color, icon, isDarkMode, isJiggling, customSrc, onClick, onRemove }: AppIconProps) => (
+const AppIcon = ({ id, label, color, icon, isDarkMode, isJiggling, customSrc, onClick, onRemove }: any) => (
   <div className={`flex flex-col items-center relative ${label === "" ? "" : "gap-1"}`}>
     <motion.button 
       animate={isJiggling ? { rotate: [0, -1, 1, -1, 0] } : {}}
@@ -3349,12 +3331,8 @@ const AppIcon = ({ id, label, color, icon, isDarkMode, isJiggling, customSrc, on
       )}
     </motion.button>
     {label !== "" && <span className="text-[11px] font-medium text-white drop-shadow-md truncate w-16 text-center">{label}</span>}
-
     {isJiggling && (
-      <button 
-        onClick={(e) => { e.stopPropagation(); onRemove(); }}
-        className="absolute -top-1.5 -left-1.5 w-5 h-5 bg-white/90 rounded-full flex items-center justify-center text-black font-bold text-xs shadow-sm z-20"
-      >
+      <button onClick={(e) => { e.stopPropagation(); onRemove(); }} className="absolute -top-1.5 -left-1.5 w-5 h-5 bg-white/90 rounded-full flex items-center justify-center text-black font-bold text-xs shadow-sm z-20">
         <Plus size={14} className="rotate-45" />
       </button>
     )}
