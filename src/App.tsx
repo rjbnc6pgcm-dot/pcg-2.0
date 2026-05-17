@@ -64,14 +64,15 @@ import {
   ChevronDown,
   ChevronUp,
   Gift as GiftIcon,
-  Globe 
-  Key
-  Grid
-  Maximize
-  Minimize
-  Download
-  Upload
-  Check
+  Globe,
+  Key,
+  Grid,
+  Image,
+  Maximize,
+  Minimize,
+  Download,
+  Upload,
+  User
 } from 'lucide-react';
 import { GoogleGenerativeAI as GoogleGenAI } from "@google/generative-ai";
 
