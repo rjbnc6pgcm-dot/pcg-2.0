@@ -1842,6 +1842,69 @@ const MomentsApp = ({
     }
   };
 
+// --- 1. 導出存檔檔案 (.txt) ---
+  const handleExportSave = () => {
+    const saveData = {
+      userProfile,
+      walletBalance,
+      characters,
+      warehouseItems,
+      transactions,
+      customIcons,
+      appNames,
+      gardenPatches,
+      letters,
+      momentPosts,
+      aiSettings
+    };
+    
+    const blob = new Blob([JSON.stringify(saveData, null, 2)], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `phone_save_${new Date().toISOString().split('T')[0]}.txt`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // --- 2. 導入存檔檔案 ---
+  const handleImportSave = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.txt,.json';
+    input.onchange = (e: any) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          try {
+            const content = event.target?.result as string;
+            const data = JSON.parse(content);
+            
+            // 批量還原數據
+            if (data.userProfile) setUserProfile(data.userProfile);
+            if (data.walletBalance !== undefined) setWalletBalance(data.walletBalance);
+            if (data.characters) setCharacters(data.characters);
+            if (data.warehouseItems) setWarehouseItems(data.warehouseItems);
+            if (data.transactions) setTransactions(data.transactions);
+            if (data.customIcons) setCustomIcons(data.customIcons);
+            if (data.appNames) setAppNames(data.appNames);
+            if (data.gardenPatches) setGardenPatches(data.gardenPatches);
+            if (data.letters) setLetters(data.letters);
+            if (data.momentPosts) setMomentPosts(data.momentPosts);
+            if (data.aiSettings) setAiSettings(data.aiSettings);
+
+            alert("存檔導入成功！系統已更新。");
+          } catch (err) {
+            alert("檔案格式錯誤，無法讀取存檔。");
+          }
+        };
+        reader.readAsText(file);
+      }
+    };
+    input.click();
+  };
+
   const handlePost = () => {
     if (!newPostText.trim() && !newPostImage) return;
     const newPost: MomentPost = {
