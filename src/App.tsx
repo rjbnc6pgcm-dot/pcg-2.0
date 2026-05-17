@@ -3476,7 +3476,7 @@ const [userProfile, setUserProfile] = useState<UserProfile>({
         </div>
       </div>
     );
-  };
+  }
 
       // --- 編輯角色分頁 ---
       return (
@@ -3807,6 +3807,7 @@ const renderCharacters = () => {
         </div>
       );
     }
+  
     return (
       <div className={`flex-1 flex flex-col h-full ${isDarkMode ? 'bg-black text-white' : 'bg-[#f2f2f7] text-black'} overflow-y-auto pb-20`}>
         <div className="px-6 pt-16 pb-3 flex justify-between items-center sticky top-0 z-10 bg-inherit backdrop-blur-md">
