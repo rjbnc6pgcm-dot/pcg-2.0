@@ -1764,72 +1764,6 @@ const MomentsApp = ({
     return { name: '未知', avatar: '❓', isUser: false };
   };
 
-// --- 導出存檔檔案 (.txt) ---
-  const handleExportSave = () => {
-    const saveData = {
-      userProfile,
-      walletBalance,
-      characters,
-      warehouseItems,
-      transactions,
-      customIcons,
-      appNames,
-      gardenPatches,
-      letters,
-      momentPosts,
-      aiSettings
-    };
-    
-    const blob = new Blob([JSON.stringify(saveData, null, 2)], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    // 檔名包含日期，例如: phone_save_2023-10-27.txt
-    link.download = `phone_save_${new Date().toISOString().split('T')[0]}.txt`;
-    link.click();
-    URL.revokeObjectURL(url);
-  };
-
-  // --- 導入存檔檔案 ---
-  const handleImportSave = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.txt,.json';
-    input.onchange = (e: any) => {
-      const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          try {
-            const content = event.target?.result as string;
-            const data = JSON.parse(content);
-            
-            // 批量更新所有狀態
-            if (data.userProfile) setUserProfile(data.userProfile);
-            if (data.walletBalance !== undefined) setWalletBalance(data.walletBalance);
-            if (data.characters) setCharacters(data.characters);
-            if (data.warehouseItems) setWarehouseItems(data.warehouseItems);
-            if (data.transactions) setTransactions(data.transactions);
-            if (data.customIcons) setCustomIcons(data.customIcons);
-            if (data.appNames) setAppNames(data.appNames);
-            if (data.gardenPatches) setGardenPatches(data.gardenPatches);
-            if (data.letters) setLetters(data.letters);
-            if (data.momentPosts) setMomentPosts(data.momentPosts);
-            if (data.aiSettings) setAiSettings(data.aiSettings);
-
-            alert("存檔導入成功！系統即將重新載入。");
-            // 建議重新整理以確保所有狀態同步
-            setTimeout(() => window.location.reload(), 500);
-          } catch (err) {
-            alert("檔案格式錯誤，無法讀取存檔。");
-          }
-        };
-        reader.readAsText(file);
-      }
-    };
-    input.click();
-  };
-
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const reader = new FileReader();
@@ -3432,6 +3366,48 @@ const [userProfile, setUserProfile] = useState<UserProfile>({
         </div>
       </div>
     );
+  };
+
+// --- 存檔導出功能 ---
+  const handleExportSave = () => {
+    const saveData = {
+      userProfile, walletBalance, characters, warehouseItems,
+      transactions, customIcons, appNames, gardenPatches,
+      letters, momentPosts, aiSettings
+    };
+    const blob = new Blob([JSON.stringify(saveData, null, 2)], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `phone_save_${new Date().toISOString().split('T')[0]}.txt`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // --- 存檔導入功能 ---
+  const handleImportSave = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.txt,.json';
+    input.onchange = (e: any) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          try {
+            const data = JSON.parse(event.target?.result as string);
+            if (data.userProfile) setUserProfile(data.userProfile);
+            if (data.walletBalance !== undefined) setWalletBalance(data.walletBalance);
+            if (data.characters) setCharacters(data.characters);
+            if (data.warehouseItems) setWarehouseItems(data.warehouseItems);
+            if (data.aiSettings) setAiSettings(data.aiSettings);
+            alert("導入成功！");
+          } catch (err) { alert("檔案格式錯誤！"); }
+        };
+        reader.readAsText(file);
+      }
+    };
+    input.click();
   };
 
 const renderSettings = () => {
