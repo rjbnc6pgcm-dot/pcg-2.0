@@ -3123,6 +3123,16 @@ export default function App() {
 
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
 
+  useEffect(() => {
+    // 初始化隨機商城貨物
+    const shuffle = (arr: any[]) => [...arr].sort(() => 0.5 - Math.random());
+    setDailyStoreItems({
+      fish: shuffle(FISH_TYPES).slice(0, 6).map(f => ({ id: f.id, price: f.rarity === '傳說' ? 10000 : f.rarity === '史詩' ? 2000 : 100 })),
+      crops: shuffle(CROP_TYPES).slice(0, 6).map(c => ({ id: c.id, price: c.sellPrice })),
+      gifts: shuffle(POSSIBLE_GIFTS).slice(0, 6).map(g => ({ id: g.id, price: g.price }))
+    });
+  }, []);
+
   // --- 2. 所有的功能函式 ---
 
   const addTransaction = (type: 'income' | 'expense' | 'transfer', amount: number, title: string) => {
@@ -3220,11 +3230,129 @@ export default function App() {
     } catch (e) { return "AI 連線失敗"; }
   };
 
-  // --- 3. 渲染 App 內容的判斷 (原本的 renderAppContent) ---
+// --- 3. 完整的 App 內容渲染 ---
   const renderAppContent = () => {
+    // 這裡補上「訊息/聊天」的簡易邏輯，如果選中了某個角色就進入聊天室
+    if (activeApp === 'messages') {
+      if (selectedChatId) {
+        const char = characters.find(c => c.id === selectedChatId);
+        if (!char) return null;
+        return (
+          <div className="flex-1 flex flex-col h-full bg-neutral-50">
+            <div className="px-4 pt-16 pb-3 flex items-center border-b bg-white/80 backdrop-blur-md sticky top-0 z-10">
+              <button onClick={() => setSelectedChatId(null)} className="text-[#76DE84] flex items-center"><ChevronLeft /> 列表</button>
+              <h2 className="flex-1 text-center font-bold mr-10">{char.name}</h2>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {char.messages.map((m, i) => (
+                <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[80%] px-4 py-2 rounded-2xl ${m.role === 'user' ? 'bg-[#76DE84] text-white' : 'bg-white shadow-sm'}`}>
+                    {m.text}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="p-4 bg-white border-t flex gap-2">
+              <input 
+                className="flex-1 bg-neutral-100 rounded-full px-4 py-2 outline-none" 
+                placeholder="輸入訊息..." 
+                onKeyDown={async (e) => {
+                  if (e.key === 'Enter') {
+                    const text = (e.target as HTMLInputElement).value;
+                    if (!text) return;
+                    (e.target as HTMLInputElement).value = '';
+                    
+                    // 用戶發言
+                    const updatedChars = characters.map(c => 
+                      c.id === char.id ? { ...c, messages: [...c.messages, { role: 'user', text } as Message] } : c
+                    );
+                    setCharacters(updatedChars);
+
+                    // 呼叫 AI 回應
+                    const response = await callUniversalAI([...char.messages, { role: 'user', text }], char.settings);
+                    setCharacters(prev => prev.map(c => 
+                      c.id === char.id ? { ...c, messages: [...c.messages, { role: 'user', text }, { role: 'model', text: response }] } : c
+                    ));
+                  }
+                }}
+              />
+            </div>
+          </div>
+        );
+      }
+      return (
+        <div className="flex-1 flex flex-col h-full bg-white">
+          <div className="px-4 pt-16 pb-3 border-b text-center font-bold text-xl">訊息</div>
+          <div className="flex-1 overflow-y-auto">
+            {characters.map(c => (
+              <div key={c.id} onClick={() => setSelectedChatId(c.id)} className="p-4 flex items-center gap-3 border-b active:bg-neutral-50">
+                <div className="w-12 h-12 rounded-full overflow-hidden bg-neutral-100 border text-2xl flex items-center justify-center">{c.avatar}</div>
+                <div className="flex-1">
+                  <div className="font-bold">{c.name}</div>
+                  <div className="text-sm text-neutral-500 truncate">{c.messages[c.messages.length-1]?.text || "尚無訊息"}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
     switch (activeApp) {
-      case 'settings': return <div>設定頁面 (補上 renderSettings)</div>;
-      case 'characters': return <div>角色頁面 (補上 renderCharacters)</div>;
+      case 'settings': 
+        return (
+          <div className="flex-1 bg-[#f2f2f7] overflow-y-auto">
+            <div className="px-4 pt-16 pb-3 bg-white border-b text-center font-bold text-xl">設定</div>
+            <div className="p-4 space-y-6">
+              <div className="bg-white rounded-xl overflow-hidden divide-y">
+                <div className="p-4 flex justify-between items-center">
+                  <span>用戶名稱</span>
+                  <input className="text-right outline-none text-neutral-500" value={userProfile.name} onChange={e => setUserProfile({...userProfile, name: e.target.value})} />
+                </div>
+                <div className="p-4 flex justify-between items-center">
+                  <span>深色模式</span>
+                  <button onClick={() => setIsDarkMode(!isDarkMode)} className={`w-12 h-6 rounded-full relative transition-colors ${isDarkMode ? 'bg-[#76DE84]' : 'bg-neutral-300'}`}>
+                    <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${isDarkMode ? 'left-7' : 'left-1'}`} />
+                  </button>
+                </div>
+              </div>
+              <div className="bg-white rounded-xl p-4 text-center text-red-500 font-bold active:bg-red-50" onClick={() => { if(confirm("確定要重置所有資料嗎？")) localStorage.clear(); location.reload(); }}>
+                重置所有玩家資料
+              </div>
+            </div>
+          </div>
+        );
+      case 'characters':
+        return (
+          <div className="flex-1 bg-[#f2f2f7] flex flex-col h-full">
+            <div className="px-4 pt-16 pb-3 bg-white border-b flex justify-between items-center">
+              <span className="font-bold text-xl">角色管理</span>
+              <button onClick={() => {
+                const name = prompt("請輸入角色名稱");
+                if (name) {
+                  const newChar: Character = {
+                    id: Date.now().toString(),
+                    name, avatar: getRandomAnimalEmoji(), favorability: 0, messages: [], memos: [],
+                    gender: '不明', age: '18', personality: '溫柔', habits: '', signature: '', settings: '你是一個好朋友',
+                    minResponseTime: 1, maxResponseTime: 3, maxMessagesPerTurn: 1
+                  };
+                  setCharacters([...characters, newChar]);
+                }
+              }} className="text-[#76DE84] font-bold">+ 新增</button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              {characters.map(c => (
+                <div key={c.id} className="bg-white p-4 rounded-xl flex items-center gap-4 shadow-sm">
+                  <div className="text-3xl">{c.avatar}</div>
+                  <div className="flex-1 font-bold">{c.name}</div>
+                  <div className="text-pink-500 font-bold text-sm">❤️ {c.favorability}</div>
+                  <button onClick={() => setCharacters(characters.filter(x => x.id !== c.id))} className="text-red-400 text-xs">刪除</button>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      // 其他原本就有的 App (Fishing, Garden, Store...)
       case 'game': return <GameApp characters={characters} userProfile={userProfile} isDarkMode={isDarkMode} goHome={goHome} aiSettings={aiSettings} walletBalance={walletBalance} setWalletBalance={setWalletBalance} setCharacters={setCharacters} addTransaction={addTransaction} callUniversalAI={callUniversalAI} />;
       case 'garden': return <GardenApp patches={gardenPatches} isDarkMode={isDarkMode} goHome={goHome} onUnlockPatch={onUnlockPatch} onPlant={onPlant} onWater={onWater} onHarvest={onHarvest} />;
       case 'kitchen': return <KitchenApp isDarkMode={isDarkMode} goHome={goHome} warehouseItems={warehouseItems} setWarehouseItems={setWarehouseItems} characters={characters} setCharacters={setCharacters} />;
@@ -3235,6 +3363,27 @@ export default function App() {
       case 'photos': return <MailboxApp isDarkMode={isDarkMode} goHome={goHome} letters={letters} setLetters={setLetters} characters={characters} userProfile={userProfile} />;
       case 'dex': return <DexApp isDarkMode={isDarkMode} goHome={goHome} />;
       case 'moments': return <MomentsApp momentGroups={momentGroups} setMomentGroups={setMomentGroups} momentPosts={momentPosts} setMomentPosts={setMomentPosts} characters={characters} userProfile={userProfile} isDarkMode={isDarkMode} goHome={goHome} />;
+      case 'wheel':
+        return (
+          <div className="flex-1 flex flex-col items-center justify-center bg-amber-50 p-6 pt-20">
+            <h2 className="text-2xl font-bold mb-8 text-amber-800">每日轉盤</h2>
+            <div className="w-64 h-64 rounded-full border-8 border-amber-600 bg-white shadow-2xl relative flex items-center justify-center overflow-hidden">
+               <div className="absolute inset-0 bg-gradient-to-tr from-amber-200 to-transparent" />
+               <Disc size={120} className="text-amber-500 animate-spin-slow" />
+            </div>
+            <button 
+              onClick={() => {
+                const win = Math.floor(Math.random() * 100) + 10;
+                setWalletBalance(prev => prev + win);
+                addTransaction('income', win, '每日轉盤獎勵');
+                alert(`恭喜獲得 $${win} 金幣！`);
+              }}
+              className="mt-12 px-10 py-3 bg-amber-600 text-white rounded-full font-bold shadow-lg active:scale-95 transition-transform"
+            >
+              立即抽獎
+            </button>
+          </div>
+        );
       default: return <div className="p-20 text-center">App 內容載入中...</div>;
     }
   };
