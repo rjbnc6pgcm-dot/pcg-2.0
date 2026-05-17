@@ -3073,46 +3073,6 @@ const simulateAiDescriber = async (char: GamePlayer, topic: string) => {
   );
 };
 
-const getIconColor = (id: AppId) => {
-  const colors: Record<string, string> = {
-    messages: '#007AFF',
-    settings: '#8E8E93',
-    store: '#FF9500',
-    kitchen: '#FF2D55',
-    wallet: '#5856D6',
-    garden: '#34C759',
-    photos: '#FF9500',
-    characters: '#AF52DE',
-    warehouse: '#5856D6',
-    fishing: '#007AFF',
-    wheel: '#FFD60A',
-    dex: '#FF3B30',
-    moments: '#FF2D55',
-    game: '#5856D6'
-  };
-  return colors[id] || '#8E8E93';
-};
-
-const getIconElement = (id: AppId) => {
-  switch (id) {
-    case 'messages': return <MessageCircle />;
-    case 'settings': return <SettingsIcon />;
-    case 'store': return <ShoppingBag />;
-    case 'kitchen': return <UtensilsCrossed />;
-    case 'wallet': return <WalletIcon />;
-    case 'garden': return <Leaf />;
-    case 'photos': return <Mail />;
-    case 'characters': return <Users />;
-    case 'warehouse': return <Archive />;
-    case 'fishing': return <FishIcon />;
-    case 'wheel': return <Disc />;
-    case 'dex': return <BookOpen />;
-    case 'moments': return <CameraIcon />;
-    case 'game': return <Gamepad2 />;
-    default: return <Smartphone />;
-  }
-};
-
 export default function App() {
   // --- 1. 所有的變數宣告 (useState & useRef) ---
   const [screenState, setScreenState] = useState<ScreenState>(ScreenState.Locked);
@@ -3282,18 +3242,14 @@ export default function App() {
 // --- 4. 最後的畫面 Return ---
   return (
     <div className={`min-h-screen bg-[#F0F0F0] flex items-center justify-center p-4 transition-all ${isFullScreen ? 'p-0 bg-black' : ''}`}>
-      {/* 手機外殼 */}
       <div className="relative w-full max-w-[375px] h-[812px] bg-black rounded-[55px] border-[12px] border-neutral-900 shadow-2xl overflow-hidden flex flex-col">
         
-        {/* Status Bar 狀態列 */}
         <div className="absolute top-0 left-0 right-0 h-11 px-6 flex justify-between items-end pb-1.5 z-[100] text-white pointer-events-none">
           <span className="text-[14px] font-semibold">{currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
           <div className="flex gap-1.5 items-center"><Signal size={16} /><Wifi size={16} /><Battery size={20} /></div>
         </div>
 
-        {/* 螢幕內容 */}
         <AnimatePresence mode="wait">
-          {/* 鎖定畫面 */}
           {screenState === ScreenState.Locked && (
             <motion.div key="locked" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, y: -812 }} className="flex-1 bg-cover bg-center flex flex-col items-center justify-between py-20" style={{ backgroundImage: `url(${lockWallpaper})` }}>
               <div className="text-white text-center">
@@ -3305,7 +3261,6 @@ export default function App() {
             </motion.div>
           )}
 
-          {/* 主畫面 */}
           {screenState === ScreenState.Home && (
             <motion.div key="home" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, scale: 1.1 }} className="flex-1 bg-cover bg-center relative" style={{ backgroundImage: `url(${homeWallpaper})` }}
               onPointerDown={(e) => e.target === e.currentTarget && setIsJiggling(false)}>
@@ -3322,7 +3277,6 @@ export default function App() {
             </motion.div>
           )}
 
-          {/* App 開啟後的畫面 */}
           {screenState === ScreenState.AppOpen && (
             <motion.div key="app" initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} className="flex-1 bg-white z-50 overflow-hidden flex flex-col rounded-t-[40px]">
               {renderAppContent()}
@@ -3331,16 +3285,14 @@ export default function App() {
           )}
         </AnimatePresence>
 
-        {/* 底部導航條 (Home Indicator) - 確保這段在手機容器內 */}
         {screenState === ScreenState.Home && (
           <div onClick={goHome} className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-36 h-1.5 bg-white/40 rounded-full z-[100] cursor-pointer hover:bg-white/60 transition-colors" />
         )}
-
-      </div> {/* 結束手機外殼 */}
-    </div> /* 結束背景容器 */
+      </div>
+    </div>
   );
-} // 結束 App 元件
-        
+} // 結束 App 函式
+
         {/* Navigation Indicator Overlay for Home Screen */}
         {screenState === ScreenState.Home && (
           <div onClick={goHome} className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-36 h-1.5 bg-white/40 rounded-full z-[100] cursor-pointer hover:bg-white/60 transition-colors" />
