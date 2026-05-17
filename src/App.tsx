@@ -65,6 +65,13 @@ import {
   ChevronUp,
   Gift as GiftIcon,
   Globe 
+  Key
+  Grid
+  Maximize
+  Minimize
+  Download
+  Upload
+  Check
 } from 'lucide-react';
 import { GoogleGenerativeAI as GoogleGenAI } from "@google/generative-ai";
 
@@ -3093,7 +3100,7 @@ export default function App() {
   const [settingsTab, setSettingsTab] = useState<'main' | 'general' | 'appearance' | 'privacy' | 'icons' | 'aiConfig'>('main');
   const [isSpinning, setIsSpinning] = useState(false);
   const [wheelRotation, setWheelRotation] = useState(0);
-  const wheelRewards = [10, 50, 100, 200, 500, 1000, 0, 50];
+  const wheelRewards = [10, 50, 100, 200, 50, 100, 0, 50];
 
   const [lockWallpaper, setLockWallpaper] = useState<string>("https://storage.googleapis.com/fun-app-assets/user-uploads/input_file_0.png");
   const [homeWallpaper, setHomeWallpaper] = useState<string>("https://storage.googleapis.com/fun-app-assets/user-uploads/input_file_0.png");
@@ -3294,52 +3301,168 @@ export default function App() {
     );
   };
 
-  const renderSettings = () => {
+const renderSettings = () => {
     const t = TRANSLATIONS[language];
+
+    // --- 子頁面渲染邏輯 ---
     if (settingsTab !== 'main') {
       return (
         <div className={`flex-1 flex flex-col h-full ${isDarkMode ? 'bg-black text-white' : 'bg-[#f2f2f7] text-black'}`}>
           <Header title={t[settingsTab as keyof typeof t] || '設定'} onBack={() => setSettingsTab('main')} isDarkMode={isDarkMode} />
-          <div className="p-4 space-y-6">
-             {settingsTab === 'general' && (
-               <div className={`rounded-xl overflow-hidden divide-y ${isDarkMode ? 'bg-[#1c1c1e] divide-[#38383a]' : 'bg-white'}`}>
-                 {Object.values(Language).map(lang => (
-                   <div key={lang} onClick={() => setLanguage(lang)} className="p-4 flex justify-between items-center cursor-pointer active:bg-neutral-500/10">
-                     <span>{lang === Language.ZH_TW ? '繁體中文' : lang === Language.ZH_CN ? '简体中文' : lang === Language.EN ? 'English' : '日本語'}</span>
-                     {language === lang && <Check size={18} className="text-[#76DE84]" />}
-                   </div>
-                 ))}
-               </div>
-             )}
-             {settingsTab === 'appearance' && (
-               <div className="space-y-6">
-                 <div className="grid grid-cols-2 gap-4">
-                   <WallpaperThumb label={t.lockScreen} src={lockWallpaper} onClick={() => { const u = prompt('網址?', lockWallpaper); if(u) setLockWallpaper(u); }} />
-                   <WallpaperThumb label={t.homeScreen} src={homeWallpaper} onClick={() => { const u = prompt('網址?', homeWallpaper); if(u) setHomeWallpaper(u); }} />
-                 </div>
-                 <div className={`rounded-xl p-4 flex justify-between items-center ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white'}`}>
-                    <span>{t.darkMode}</span>
-                    <button onClick={() => setIsDarkMode(!isDarkMode)} className={`w-12 h-6 rounded-full relative transition-colors ${isDarkMode ? 'bg-[#76DE84]' : 'bg-neutral-300'}`}>
-                      <motion.div animate={{ x: isDarkMode ? 24 : 4 }} className="absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm" />
+          <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-20">
+            
+            {/* 個人資料編輯 */}
+            {settingsTab === 'general' && (
+              <div className="space-y-6">
+                <div className="flex flex-col items-center py-4">
+                  <div className="w-20 h-20 rounded-full bg-neutral-200 shadow-inner mb-2 overflow-hidden flex items-center justify-center text-4xl border-2 border-white">
+                    <AvatarImage src={userProfile.avatar} />
+                  </div>
+                  <button onClick={() => {
+                    const icon = prompt('輸入新的 Emoji 或頭像網址', userProfile.avatar);
+                    if(icon) setUserProfile({...userProfile, avatar: icon});
+                  }} className="text-[#76DE84] text-xs font-bold">更換大頭照</button>
+                </div>
+                <div className={`rounded-xl overflow-hidden divide-y ${isDarkMode ? 'bg-[#1c1c1e] divide-white/5' : 'bg-white divide-neutral-100'}`}>
+                  <ProfileInput label="你的姓名" value={userProfile.name} isDark={isDarkMode} onChange={v => setUserProfile({...userProfile, name: v})} />
+                  <ProfileInput label="個人簽名" value={userProfile.signature} isDark={isDarkMode} onChange={v => setUserProfile({...userProfile, signature: v})} />
+                </div>
+                <div className="px-4 text-xs text-neutral-500">這些資訊將用於與 AI 角色互動時的稱呼。</div>
+              </div>
+            )}
+
+            {/* API 設定 */}
+            {settingsTab === 'aiConfig' && (
+              <div className="space-y-6">
+                <div className={`rounded-xl p-4 space-y-4 ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white shadow-sm'}`}>
+                  <div>
+                    <label className="text-[10px] font-bold opacity-40 uppercase block mb-1">API Endpoint (網址)</label>
+                    <input className="w-full bg-transparent outline-none text-sm border-b border-neutral-500/20 pb-1" value={aiSettings.baseUrl} onChange={e => setAiSettings({...aiSettings, baseUrl: e.target.value})} />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold opacity-40 uppercase block mb-1">API Key (金鑰)</label>
+                    <input type="password" placeholder="sk-..." className="w-full bg-transparent outline-none text-sm border-b border-neutral-500/20 pb-1" value={aiSettings.apiKey} onChange={e => setAiSettings({...aiSettings, apiKey: e.target.value})} />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold opacity-40 uppercase block mb-1">模型名稱 (Model)</label>
+                    <input className="w-full bg-transparent outline-none text-sm border-b border-neutral-500/20 pb-1" value={aiSettings.model} onChange={e => setAiSettings({...aiSettings, model: e.target.value})} />
+                  </div>
+                </div>
+                <p className="text-[11px] text-neutral-500 px-2 italic">※ 預設支援 OpenAI 格式。若使用 Gemini 請確保網址正確。</p>
+              </div>
+            )}
+
+            {/* 更換圖示與名稱 */}
+            {settingsTab === 'icons' && (
+              <div className="space-y-4">
+                {installedApps.map(appId => (
+                  <div key={appId} className={`p-4 rounded-xl flex items-center gap-4 ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white'}`}>
+                    <div className="w-10 h-10 rounded-lg overflow-hidden flex items-center justify-center bg-neutral-200">
+                      {customIcons[appId] ? <img src={customIcons[appId]} className="w-full h-full object-cover" /> : getIconElement(appId)}
+                    </div>
+                    <div className="flex-1 space-y-1">
+                      <input className="font-bold text-sm bg-transparent outline-none w-full" value={appNames[appId] || appId} 
+                        onChange={e => setAppNames({...appNames, [appId]: e.target.value})} placeholder="修改 App 名稱" />
+                      <input className="text-[10px] opacity-40 bg-transparent outline-none w-full" value={customIcons[appId] || ''} 
+                        onChange={e => setCustomIcons({...customIcons, [appId]: e.target.value})} placeholder="輸入圖示網址 (留空預設)" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* 背景圖片與全屏 */}
+            {settingsTab === 'appearance' && (
+              <div className="space-y-8">
+                <div className="grid grid-cols-2 gap-4">
+                  <WallpaperThumb label="鎖定畫面" src={lockWallpaper} onClick={() => {const u = prompt('網址?', lockWallpaper); if(u) setLockWallpaper(u)}} />
+                  <WallpaperThumb label="主畫面" src={homeWallpaper} onClick={() => {const u = prompt('網址?', homeWallpaper); if(u) setHomeWallpaper(u)}} />
+                </div>
+                <div className={`rounded-xl overflow-hidden divide-y ${isDarkMode ? 'bg-[#1c1c1e] divide-white/5' : 'bg-white divide-neutral-100'}`}>
+                  <div className="px-5 py-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center text-white"><Maximize size={18} /></div>
+                      <span className="text-sm font-medium">沈浸式全螢幕模式</span>
+                    </div>
+                    <button onClick={() => setIsFullScreen(!isFullScreen)} className={`w-12 h-6 rounded-full relative transition-colors ${isFullScreen ? 'bg-[#76DE84]' : 'bg-neutral-300'}`}>
+                      <motion.div animate={{ x: isFullScreen ? 24 : 4 }} className="absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm" />
                     </button>
-                 </div>
-               </div>
-             )}
+                  </div>
+                </div>
+                <p className="text-[11px] text-center text-neutral-500 italic">※ 全螢幕模式將移除手機邊框，適合在行動裝置上使用。</p>
+              </div>
+            )}
+
+            {/* 存檔管理 */}
+            {settingsTab === 'privacy' && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-3">
+                  <button onClick={() => {
+                    const data = JSON.stringify({ userProfile, walletBalance, characters, warehouseItems, transactions, customIcons, appNames });
+                    navigator.clipboard.writeText(data);
+                    alert("存檔代碼已複製到剪貼簿！");
+                  }} className="flex flex-col items-center gap-2 p-6 bg-blue-500 text-white rounded-3xl active:scale-95 transition-transform">
+                    <Download size={32} />
+                    <span className="font-bold text-sm">導出存檔</span>
+                  </button>
+                  <button onClick={() => {
+                    const code = prompt("請貼上導出的存檔代碼：");
+                    if(code) {
+                      try {
+                        const parsed = JSON.parse(code);
+                        if(parsed.userProfile) {
+                          setUserProfile(parsed.userProfile);
+                          setWalletBalance(parsed.walletBalance || 0);
+                          setCharacters(parsed.characters || []);
+                          setWarehouseItems(parsed.warehouseItems || []);
+                          alert("導入成功！");
+                          location.reload();
+                        }
+                      } catch(e) { alert("無效的代碼！"); }
+                    }
+                  }} className="flex flex-col items-center gap-2 p-6 bg-emerald-500 text-white rounded-3xl active:scale-95 transition-transform">
+                    <Upload size={32} />
+                    <span className="font-bold text-sm">導入存檔</span>
+                  </button>
+                </div>
+                <div className={`rounded-xl p-4 border-2 border-red-500/20 text-center ${isDarkMode ? 'bg-red-500/5' : 'bg-red-50'}`}>
+                   <button onClick={() => { if(confirm("這將刪除所有數據，確定嗎？")) { localStorage.clear(); location.reload(); }}} className="text-red-500 font-bold text-sm">重置所有玩家資料</button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       );
     }
+
+    // --- 設定主頁面 ---
     return (
       <div className={`flex-1 flex flex-col h-full ${isDarkMode ? 'bg-black text-white' : 'bg-[#f2f2f7] text-black'}`}>
         <div className="px-6 pt-16 pb-3 text-3xl font-black">{t.settings}</div>
-        <div className="p-4 space-y-4">
-           <div className={`rounded-xl overflow-hidden divide-y ${isDarkMode ? 'bg-[#1c1c1e] divide-[#38383a]' : 'bg-white divide-neutral-100'}`}>
-             <SettingsRow icon={<Globe size={18} color="white" />} iconBg="#007AFF" label={t.general} onClick={() => setSettingsTab('general')} />
-             <SettingsRow icon={<Palette size={18} color="white" />} iconBg="#FF2D55" label={t.appearance} onClick={() => setSettingsTab('appearance')} />
-           </div>
-           <div className={`rounded-xl p-4 text-center text-red-500 font-bold ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white'}`} onClick={() => { if(confirm(t.resetConfirmDesc)) { localStorage.clear(); location.reload(); }}}>
-             {t.reset}
-           </div>
+        <div className="flex-1 overflow-y-auto p-4 space-y-6">
+          
+          {/* 個人資料入口 (頂部) */}
+          <div onClick={() => setSettingsTab('general')} className={`p-4 rounded-2xl flex items-center gap-4 active:opacity-70 transition-opacity ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white shadow-sm'}`}>
+            <div className="w-16 h-16 rounded-full overflow-hidden bg-neutral-200 border-2 border-white">
+              <AvatarImage src={userProfile.avatar} />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-bold text-lg leading-tight">{userProfile.name}</h3>
+              <p className="text-xs opacity-50 truncate w-48">{userProfile.signature || '編輯個人資料'}</p>
+            </div>
+            <ChevronRight size={20} className="opacity-20" />
+          </div>
+
+          <div className={`rounded-xl overflow-hidden divide-y ${isDarkMode ? 'bg-[#1c1c1e] divide-white/5' : 'bg-white divide-neutral-100'}`}>
+            <SettingsRow icon={<Key size={18} color="white" />} iconBg="#8E8E93" label="AI 助手與 API 設定" onClick={() => setSettingsTab('aiConfig')} />
+            <SettingsRow icon={<Grid size={18} color="white" />} iconBg="#AF52DE" label="更換圖示與自定義名稱" onClick={() => setSettingsTab('icons')} />
+            <SettingsRow icon={<Image size={18} color="white" />} iconBg="#FF2D55" label="背景圖片與外觀" onClick={() => setSettingsTab('appearance')} />
+            <SettingsRow icon={<Download size={18} color="white" />} iconBg="#007AFF" label="存檔與導入/導出" onClick={() => setSettingsTab('privacy')} />
+          </div>
+
+          <div className="text-center pb-10">
+            <span className="text-[10px] opacity-20 font-mono tracking-widest uppercase">System Version 2.0.1</span>
+          </div>
         </div>
       </div>
     );
@@ -3535,14 +3658,17 @@ const renderCharacters = () => {
   };
 
   // --- 5. 最後的畫面 Return ---
-  return (
-    <div className={`min-h-screen bg-[#F0F0F0] flex items-center justify-center p-4 transition-all ${isFullScreen ? 'p-0 bg-black' : ''}`}>
-      <div className="relative w-full max-w-[375px] h-[812px] bg-black rounded-[55px] border-[12px] border-neutral-900 shadow-2xl overflow-hidden flex flex-col">
-        
-        <div className="absolute top-0 left-0 right-0 h-11 px-6 flex justify-between items-end pb-1.5 z-[100] text-white pointer-events-none">
-          <span className="text-[14px] font-semibold">{currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
-          <div className="flex gap-1.5 items-center"><Signal size={16} /><Wifi size={16} /><Battery size={20} /></div>
-        </div>
+return (
+    <div className={`min-h-screen bg-[#F0F0F0] flex items-center justify-center transition-all duration-700 ${isFullScreen ? 'p-0 bg-black' : 'p-4'}`}>
+      <div 
+        style={isFullScreen ? { 
+          maxWidth: '100%', 
+          height: '100vh', 
+          borderRadius: '0', 
+          borderWidth: '0' 
+        } : {}}
+        className={`relative w-full max-w-[375px] h-[812px] bg-black rounded-[55px] border-[12px] border-neutral-900 shadow-2xl overflow-hidden flex flex-col transition-all duration-700`}
+      >
 
         <AnimatePresence mode="wait">
           {screenState === ScreenState.Locked && (
