@@ -67,6 +67,45 @@ import {
 } from 'lucide-react';
 import { GoogleGenerativeAI as GoogleGenAI } from "@google/generative-ai";
 
+const getIconColor = (id: AppId) => {
+  const colors: Record<string, string> = {
+    messages: '#007AFF',
+    settings: '#8E8E93',
+    store: '#FF9500',
+    kitchen: '#FF2D55',
+    wallet: '#5856D6',
+    garden: '#34C759',
+    photos: '#FF9500',
+    characters: '#AF52DE',
+    warehouse: '#5856D6',
+    fishing: '#007AFF',
+    wheel: '#FFD60A',
+    dex: '#FF3B30',
+    moments: '#FF2D55',
+    game: '#5856D6'
+  };
+  return colors[id] || '#8E8E93';
+};
+
+const getIconElement = (id: AppId) => {
+  switch (id) {
+    case 'messages': return <MessageCircle />;
+    case 'settings': return <SettingsIcon />;
+    case 'store': return <ShoppingBag />;
+    case 'kitchen': return <UtensilsCrossed />;
+    case 'wallet': return <WalletIcon />;
+    case 'garden': return <Leaf />;
+    case 'photos': return <Mail />;
+    case 'characters': return <Users />;
+    case 'warehouse': return <Archive />;
+    case 'fishing': return <FishIcon />;
+    case 'wheel': return <Disc />;
+    case 'dex': return <BookOpen />;
+    case 'moments': return <CameraIcon />;
+    case 'game': return <Gamepad2 />;
+    default: return <Smartphone />;
+  }
+};
 
 const BUBBLE_PRESETS = [
   { name: '經典深藍', css: 'background: linear-gradient(135deg, #007AFF, #0056b3); color: white; border-radius: 18px 18px 2px 18px; border: none; shadow: none;' },
@@ -3034,8 +3073,48 @@ const simulateAiDescriber = async (char: GamePlayer, topic: string) => {
   );
 };
 
+const getIconColor = (id: AppId) => {
+  const colors: Record<string, string> = {
+    messages: '#007AFF',
+    settings: '#8E8E93',
+    store: '#FF9500',
+    kitchen: '#FF2D55',
+    wallet: '#5856D6',
+    garden: '#34C759',
+    photos: '#FF9500',
+    characters: '#AF52DE',
+    warehouse: '#5856D6',
+    fishing: '#007AFF',
+    wheel: '#FFD60A',
+    dex: '#FF3B30',
+    moments: '#FF2D55',
+    game: '#5856D6'
+  };
+  return colors[id] || '#8E8E93';
+};
+
+const getIconElement = (id: AppId) => {
+  switch (id) {
+    case 'messages': return <MessageCircle />;
+    case 'settings': return <SettingsIcon />;
+    case 'store': return <ShoppingBag />;
+    case 'kitchen': return <UtensilsCrossed />;
+    case 'wallet': return <WalletIcon />;
+    case 'garden': return <Leaf />;
+    case 'photos': return <Mail />;
+    case 'characters': return <Users />;
+    case 'warehouse': return <Archive />;
+    case 'fishing': return <FishIcon />;
+    case 'wheel': return <Disc />;
+    case 'dex': return <BookOpen />;
+    case 'moments': return <CameraIcon />;
+    case 'game': return <Gamepad2 />;
+    default: return <Smartphone />;
+  }
+};
+
 export default function App() {
-  // --- 這些宣告必須存在於 App 裡面 ---
+  // --- 1. 所有的變數宣告 (useState & useRef) ---
   const [screenState, setScreenState] = useState<ScreenState>(ScreenState.Locked);
   const [activeApp, setActiveApp] = useState<AppId | null>(null);
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
@@ -3043,12 +3122,13 @@ export default function App() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [language, setLanguage] = useState<Language>(Language.ZH_TW);
   const [isFullScreen, setIsFullScreen] = useState(false);
+  const [isAddingApp, setIsAddingApp] = useState(false);
+  const [isJiggling, setIsJiggling] = useState(false);
+  const [typingChatId, setTypingChatId] = useState<string | null>(null);
 
-  // ⚠️ 檢查這兩行是否被你不小心刪掉了 ⚠️
   const [lockWallpaper, setLockWallpaper] = useState<string>("https://storage.googleapis.com/fun-app-assets/user-uploads/input_file_0.png");
   const [homeWallpaper, setHomeWallpaper] = useState<string>("https://storage.googleapis.com/fun-app-assets/user-uploads/input_file_0.png");
 
-  // 2. 玩家與 AI 設定
   const [userProfile, setUserProfile] = useState<UserProfile>({ 
     name: '使用者', age: '', gender: '', avatar: '🥕', signature: '今天也是美好的一天' 
   });
@@ -3058,10 +3138,7 @@ export default function App() {
   const [aiSettings, setAiSettings] = useState<AISettings>({ 
     apiKey: '', model: 'gemini-1.5-flash', baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/'
   });
-  const [availableModels, setAvailableModels] = useState<string[]>([]);
-  const [isFetchingModels, setIsFetchingModels] = useState(false);
-
-  // 3. 遊戲與經濟系統狀態
+  
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [warehouseItems, setWarehouseItems] = useState<{id: string, amount: number}[]>([]);
   const [gardenPatches, setGardenPatches] = useState<GardenPatch[]>(
@@ -3071,33 +3148,104 @@ export default function App() {
   const [receivedGifts, setReceivedGifts] = useState<ReceivedGift[]>([]);
   const [letters, setLetters] = useState<Letter[]>([]);
 
-  // 4. 社交與商城狀態
   const [momentGroups, setMomentGroups] = useState<MomentGroup[]>([
     { id: 'group1', name: '朋友圈1', characterIds: [] },
     { id: 'group2', name: '朋友圈2', characterIds: [] }
   ]);
   const [momentPosts, setMomentPosts] = useState<MomentPost[]>([]);
   const [dailyStoreItems, setDailyStoreItems] = useState<any>({ fish: [], crops: [], gifts: [] });
-  const [lastStoreReset, setLastStoreReset] = useState<string>('');
   const [wheelSpins, setWheelSpins] = useState(3);
-  const [wheelRewards, setWheelRewards] = useState<number[]>([]);
-  const [isSpinning, setIsSpinning] = useState(false);
-  const [wheelRotation, setWheelRotation] = useState(0);
 
-  // 5. 介面與 App 列表
   const [customIcons, setCustomIcons] = useState<Record<string, string>>({});
   const [appNames, setAppNames] = useState<Record<string, string>>({});
   const [installedApps, setInstalledApps] = useState<AppId[]>(['messages', 'settings', 'store', 'kitchen', 'wallet', 'garden', 'photos', 'characters', 'warehouse', 'fishing', 'wheel', 'dex', 'moments', 'game']);
   const [dockApps, setDockApps] = useState<AppId[]>(['messages']);
-  const [isJiggling, setIsJiggling] = useState(false);
-  const [typingChatId, setTypingChatId] = useState<string | null>(null);
 
-  // 6. 核心函數 (AI 連接器)
+  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
+
+  // --- 2. 所有的功能函式 ---
+
+  const addTransaction = (type: 'income' | 'expense' | 'transfer', amount: number, title: string) => {
+    const newTx: Transaction = { id: Date.now().toString(), type, amount, title, timestamp: new Date().toLocaleString() };
+    setTransactions(prev => [newTx, ...prev]);
+  };
+
+  const removeApp = (id: AppId) => setInstalledApps(prev => prev.filter(a => a !== id));
+  const removeDockApp = (id: AppId) => setDockApps(prev => prev.filter(a => a !== id));
+  const addApp = (id: AppId) => { setInstalledApps(prev => [...prev, id]); setIsAddingApp(false); };
+
+  const goHome = () => { setScreenState(ScreenState.Home); setActiveApp(null); setSelectedChatId(null); setIsJiggling(false); };
+  const openApp = (app: AppId) => { if (!isJiggling) { setActiveApp(app); setScreenState(ScreenState.AppOpen); } };
+
+  const handleHomePointerDown = () => {
+    longPressTimer.current = setTimeout(() => setIsJiggling(true), 800);
+  };
+
+  const handleHomePointerUp = () => {
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+  };
+
+  const onUnlockPatch = (id: number) => {
+    if (walletBalance >= 300) {
+      setWalletBalance(prev => prev - 300);
+      addTransaction('expense', 300, '解鎖花園土堆');
+      setGardenPatches(prev => prev.map(p => p.id === id ? { ...p, status: 'empty' } : p));
+    }
+  };
+
+  const onPlant = (id: number) => {
+    const crop = CROP_TYPES[Math.floor(Math.random() * CROP_TYPES.length)];
+    setGardenPatches(prev => prev.map(p => p.id === id ? { 
+      ...p, status: 'growing', cropId: crop.id, plantedTime: Date.now(), 
+      needsWatering: false, waterCount: 0 
+    } : p));
+  };
+
+  const onWater = (id: number) => {
+    setGardenPatches(prev => prev.map(p => p.id === id ? { ...p, lastWateredTime: Date.now(), needsWatering: false } : p));
+  };
+
+  const onHarvest = (id: number) => {
+    setGardenPatches(prev => prev.map(p => {
+      if (p.id === id && p.cropId) {
+        setWarehouseItems(items => {
+          const existing = items.find(i => i.id === p.cropId);
+          return existing ? items.map(i => i.id === p.cropId ? { ...i, amount: i.amount + 1 } : i) : [...items, { id: p.cropId!, amount: 1 }];
+        });
+        return { ...p, status: 'empty', cropId: undefined };
+      }
+      return p;
+    }));
+  };
+
+  const onCatchFish = (id: string) => {
+    setWarehouseItems(prev => {
+      const existing = prev.find(i => i.id === id);
+      return existing ? prev.map(i => i.id === id ? { ...i, amount: i.amount + 1 } : i) : [...prev, { id, amount: 1 }];
+    });
+  };
+
+  const onCatchTrash = (coins: number) => {
+    setWalletBalance(prev => prev + coins);
+    addTransaction('income', coins, '釣魚獲得金幣');
+  };
+
+  const onSell = (id: string, name: string, price: number) => {
+    setWarehouseItems(prev => {
+      const item = prev.find(i => i.id === id);
+      if (item && item.amount > 0) {
+        setWalletBalance(b => b + price);
+        addTransaction('income', price, `出售 ${name}`);
+        return item.amount === 1 ? prev.filter(i => i.id !== id) : prev.map(i => i.id === id ? { ...i, amount: i.amount - 1 } : i);
+      }
+      return prev;
+    });
+  };
+
   const callUniversalAI = async (history: Message[], systemPrompt: string) => {
     if (!aiSettings.apiKey) return "請輸入 API Key";
     try {
-      const cleanBaseUrl = aiSettings.baseUrl.replace(/\/$/, '');
-      const url = cleanBaseUrl.endsWith('/chat/completions') ? cleanBaseUrl : `${cleanBaseUrl}/chat/completions`;
+      const url = `${aiSettings.baseUrl.replace(/\/$/, '')}/chat/completions`;
       const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${aiSettings.apiKey}` },
@@ -3112,108 +3260,13 @@ export default function App() {
     } catch (e) { return "AI 連線失敗"; }
   };
 
-  const goHome = () => { setScreenState(ScreenState.Home); setActiveApp(null); setSelectedChatId(null); setIsJiggling(false); };
-  const openApp = (app: AppId) => { if (!isJiggling) { setActiveApp(app); setScreenState(ScreenState.AppOpen); } };
-
-  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
-
-  const handleHomePointerDown = (id?: AppId) => {
-    if (isJiggling) return;
-    longPressTimer.current = setTimeout(() => {
-      setIsJiggling(true);
-    }, 800);
-  };
-
-  const handleHomePointerUp = () => {
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-    }
-  };
-
-// 記得補上這些函數，否則傳給 GardenApp 的 props 會是空的
-  const onUnlockPatch = (id: number) => {
-    if (walletBalance >= 300) {
-      setWalletBalance(prev => prev - 300);
-      addTransaction('expense', 300, '解鎖花園土堆');
-      setGardenPatches(prev => prev.map(p => p.id === id ? { ...p, status: 'empty' } : p));
-    }
-  };
-
-  const onPlant = (id: number) => {
-    const crop = CROP_TYPES[Math.floor(Math.random() * CROP_TYPES.length)];
-    setGardenPatches(prev => prev.map(p => p.id === id ? { 
-      ...p, status: 'growing', cropId: crop.id, plantedTime: Date.now(), 
-      lastWateredTime: Date.now(), needsWatering: false, waterCount: 0 
-    } : p));
-  };
-  
-  const onWater = (id: number) => {
-    setGardenPatches(prev => prev.map(p => p.id === id ? { 
-      ...p, lastWateredTime: Date.now(), needsWatering: false, 
-      waterCount: (p.waterCount || 0) + 1 
-    } : p));
-  };
-
-  const onHarvest = (id: number) => {
-    setGardenPatches(prev => prev.map(p => {
-      if (p.id === id) {
-        if (p.status === 'ready' && p.cropId) {
-          setWarehouseItems(items => {
-            const existing = items.find(i => i.id === p.cropId);
-            return existing 
-              ? items.map(i => i.id === p.cropId ? { ...i, amount: i.amount + 1 } : i)
-              : [...items, { id: p.cropId!, amount: 1 }];
-          });
-        }
-        return { ...p, status: 'empty', cropId: undefined, waterCount: 0 };
-      }
-      return p;
-    }));
-  };
-
-  // 釣魚函數也需要補上
-const onCatchFish = (id: string) => {
-  setWarehouseItems(prev => {
-    const existing = prev.find(i => i.id === id);
-    return existing ? prev.map(i => i.id === id ? { ...i, amount: i.amount + 1 } : i) : [...prev, { id, amount: 1 }];
-  });
-};
-
-const onCatchTrash = (coins: number) => {
-  setWalletBalance(prev => prev + coins);
-  addTransaction('income', coins, '釣魚獲得金幣');
-};
-
-const onSell = (id: string, name: string, price: number) => {
-  setWarehouseItems(prev => {
-    const existing = prev.find(i => i.id === id);
-    if (existing && existing.amount > 0) {
-      setWalletBalance(b => b + price);
-      addTransaction('income', price, `出售 ${name}`);
-      return existing.amount === 1 ? prev.filter(i => i.id !== id) : prev.map(i => i.id === id ? { ...i, amount: i.amount - 1 } : i);
-    }
-    return prev;
-  });
-};
-
-const renderAppContent = () => {
+  // --- 3. 渲染 App 內容的判斷 (原本的 renderAppContent) ---
+  const renderAppContent = () => {
     switch (activeApp) {
-      case 'messages': return null; 
-      case 'settings': return renderSettings();
-      case 'characters': return renderCharacters();
-      case 'wheel': return renderWheelApp();
-      case 'game': 
-        return <GameApp 
-          characters={characters} userProfile={userProfile} isDarkMode={isDarkMode} 
-          goHome={goHome} aiSettings={aiSettings} walletBalance={walletBalance} 
-          setWalletBalance={setWalletBalance} setCharacters={setCharacters} 
-          addTransaction={addTransaction} callUniversalAI={callUniversalAI} 
-        />;
-      case 'garden': 
-        return <GardenApp 
-          patches={gardenPatches} isDarkMode={isDarkMode} goHome={goHome}
-          onUnlockPatch={onUnlockPatch} onPlant={onPlant} onWater={onWater} onHarvest={onHarvest}
-        />;
+      case 'settings': return <div>設定頁面 (補上 renderSettings)</div>;
+      case 'characters': return <div>角色頁面 (補上 renderCharacters)</div>;
+      case 'game': return <GameApp characters={characters} userProfile={userProfile} isDarkMode={isDarkMode} goHome={goHome} aiSettings={aiSettings} walletBalance={walletBalance} setWalletBalance={setWalletBalance} setCharacters={setCharacters} addTransaction={addTransaction} callUniversalAI={callUniversalAI} />;
+      case 'garden': return <GardenApp patches={gardenPatches} isDarkMode={isDarkMode} goHome={goHome} onUnlockPatch={onUnlockPatch} onPlant={onPlant} onWater={onWater} onHarvest={onHarvest} />;
       case 'kitchen': return <KitchenApp isDarkMode={isDarkMode} goHome={goHome} warehouseItems={warehouseItems} setWarehouseItems={setWarehouseItems} characters={characters} setCharacters={setCharacters} />;
       case 'store': return <StoreApp walletBalance={walletBalance} setWalletBalance={setWalletBalance} addTransaction={addTransaction} setWarehouseItems={setWarehouseItems} dailyStoreItems={dailyStoreItems} isDarkMode={isDarkMode} goHome={goHome} warehouseItems={warehouseItems} characters={characters} setCharacters={setCharacters} />;
       case 'wallet': return <WalletApp walletBalance={walletBalance} transactions={transactions} isDarkMode={isDarkMode} goHome={goHome} setActiveApp={setActiveApp} />;
@@ -3222,293 +3275,71 @@ const renderAppContent = () => {
       case 'photos': return <MailboxApp isDarkMode={isDarkMode} goHome={goHome} letters={letters} setLetters={setLetters} characters={characters} userProfile={userProfile} />;
       case 'dex': return <DexApp isDarkMode={isDarkMode} goHome={goHome} />;
       case 'moments': return <MomentsApp momentGroups={momentGroups} setMomentGroups={setMomentGroups} momentPosts={momentPosts} setMomentPosts={setMomentPosts} characters={characters} userProfile={userProfile} isDarkMode={isDarkMode} goHome={goHome} />;
-      default: return (
-        <div className={`flex-1 flex flex-col items-center justify-center pt-20 ${isDarkMode ? 'bg-black text-white' : 'bg-[#f2f2f7] text-black'}`}>
-          <div className="animate-bounce mb-4"><Smartphone size={48} className="text-[#76DE84]" /></div>
-          <h2 className="text-xl font-bold capitalize">{appNames[activeApp || ''] || activeApp}</h2>
-        </div>
-      );
+      default: return <div className="p-20 text-center">App 內容載入中...</div>;
     }
   };
 
-  // --- 在 return 之前補回你原本的 useEffect (LocalStorage 加載等) ---
+// --- 4. 最後的畫面 Return ---
   return (
-    <div className={`min-h-screen bg-[#F0F0F0] flex items-center justify-center p-4 font-sans text-neutral-800 transition-all duration-500 ${isFullScreen ? 'p-0 bg-black' : ''}`}>
-      <div 
-        style={isFullScreen ? { maxWidth: '100%', height: '100vh', borderRadius: '0', borderWidth: '0' } : {}}
-        className={`relative w-full max-w-[375px] h-[812px] bg-black rounded-[55px] border-[12px] border-neutral-900 shadow-2xl overflow-hidden flex flex-col transition-all duration-500`}
-      >
-        {/* Status Bar */}
-        <div className="absolute top-0 left-0 right-0 h-11 px-6 flex justify-between items-end pb-1.5 z-[100] pointer-events-none">
-          <span className="text-[14px] font-semibold text-white">{currentTime.toLocaleTimeString(LOCALES[language], { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-black rounded-b-3xl" />
-          <div className="flex gap-1.5 items-center text-white"><Signal size={16} /> <Wifi size={16} /> <Battery size={20} /></div>
+    <div className={`min-h-screen bg-[#F0F0F0] flex items-center justify-center p-4 transition-all ${isFullScreen ? 'p-0 bg-black' : ''}`}>
+      {/* 手機外殼 */}
+      <div className="relative w-full max-w-[375px] h-[812px] bg-black rounded-[55px] border-[12px] border-neutral-900 shadow-2xl overflow-hidden flex flex-col">
+        
+        {/* Status Bar 狀態列 */}
+        <div className="absolute top-0 left-0 right-0 h-11 px-6 flex justify-between items-end pb-1.5 z-[100] text-white pointer-events-none">
+          <span className="text-[14px] font-semibold">{currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
+          <div className="flex gap-1.5 items-center"><Signal size={16} /><Wifi size={16} /><Battery size={20} /></div>
         </div>
 
+        {/* 螢幕內容 */}
         <AnimatePresence mode="wait">
+          {/* 鎖定畫面 */}
           {screenState === ScreenState.Locked && (
-            <motion.div key="locked" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, y: -812 }} 
-              className="relative flex-1 flex flex-col items-center bg-cover bg-center" 
-              style={{ 
-                backgroundColor: lockWallpaper === "grey-cross" ? "#2c2c2e" : "transparent",
-                backgroundImage: lockWallpaper === "grey-cross" 
-                  ? `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M19 15h2v10h-2zM15 19h10v2h-10z' fill='%23ffffff' fill-opacity='0.05'/%3E%3C/svg%3E")` 
-                  : `url(${lockWallpaper})` 
-              }}
-            >
-              <div className="absolute inset-0 bg-black/10" />
-              <div className="relative z-10 mt-16 text-center text-white"><Lock size={20} className="mx-auto mb-2 opacity-80" />
-                <h1 className="text-7xl font-thin tracking-tighter mb-1">{currentTime.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false })}</h1>
-                <p className="text-xl font-medium opacity-90">{currentTime.toLocaleDateString('zh-TW', { month: 'long', day: 'numeric', weekday: 'long' })}</p></div>
-              <div className="absolute bottom-20 left-0 right-0 flex flex-col items-center z-10">
-                <motion.button whileTap={{ scale: 0.9 }} onClick={() => setScreenState(ScreenState.Home)} 
-                  className="w-16 h-16 bg-white/20 backdrop-blur-xl rounded-full flex items-center justify-center border border-white/30 text-white shadow-lg"><Unlock size={28} /></motion.button>
-                <p className="mt-4 text-white/60 text-sm font-medium animate-pulse">向上輕掃解鎖</p></div>
+            <motion.div key="locked" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, y: -812 }} className="flex-1 bg-cover bg-center flex flex-col items-center justify-between py-20" style={{ backgroundImage: `url(${lockWallpaper})` }}>
+              <div className="text-white text-center">
+                <Lock size={20} className="mx-auto mb-2 opacity-80" />
+                <h1 className="text-7xl font-thin tracking-tighter">{currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}</h1>
+                <p className="text-xl font-medium opacity-90">{currentTime.toLocaleDateString('zh-TW', { month: 'long', day: 'numeric', weekday: 'long' })}</p>
+              </div>
+              <button onClick={() => setScreenState(ScreenState.Home)} className="w-16 h-16 bg-white/20 backdrop-blur-xl rounded-full flex items-center justify-center text-white border border-white/30 shadow-lg"><Unlock size={28} /></button>
             </motion.div>
           )}
 
+          {/* 主畫面 */}
           {screenState === ScreenState.Home && (
-            <motion.div 
-              key="home" 
-              initial={{ opacity: 0 }} 
-              animate={{ opacity: 1 }} 
-              exit={{ opacity: 0, scale: 1.1 }} 
-              className="relative flex-1 flex flex-col bg-cover bg-center select-none" 
-              style={{ 
-                backgroundColor: homeWallpaper === "grey-cross" ? "#1c1c1e" : "transparent",
-                backgroundImage: homeWallpaper === "grey-cross" 
-                  ? `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M19 15h2v10h-2zM15 19h10v2h-10z' fill='%23ffffff' fill-opacity='0.05'/%3E%3C/svg%3E")` 
-                  : `url(${homeWallpaper})` 
-              }}
-              onPointerDown={(e) => {
-                if (isJiggling) {
-                  // If clicking background (not an app), stop jiggling
-                  if (e.target === e.currentTarget) setIsJiggling(false);
-                } else {
-                  handleHomePointerDown();
-                }
-              }}
-              onPointerUp={handleHomePointerUp}
-              onPointerLeave={handleHomePointerUp}
-            >
-              <div className="absolute inset-0 bg-black/5" />
-              
-              {/* App Grid */}
-              <div 
-                className="relative z-10 p-6 pt-24 flex-1"
-                onPointerUp={() => {
-                  if (longPressTimer.current) {
-                    clearTimeout(longPressTimer.current);
-                  }
-                }}
-              >
-                <div 
-                  className="grid grid-cols-4 gap-x-4 gap-y-8 auto-rows-max"
-                  onPointerDown={(e) => e.stopPropagation()}
-                >
-                  <AnimatePresence mode="popLayout">
-                    {installedApps.map((id, index) => (
-                      <motion.div
-                        key={id}
-                        layout
-                        layoutId={id}
-                        drag={isJiggling}
-                        dragListener={isJiggling}
-                        dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
-                        dragElastic={0.9}
-                        whileDrag={{ 
-                          scale: 1.1, 
-                          zIndex: 50,
-                          transition: { duration: 0.1 } 
-                        }}
-                        onDrag={(_, info) => {
-                          if (!isJiggling) return;
-                          
-                          // Simplified 2D grid reordering logic
-                          // We calculate the target index based on drag position
-                          // 4 columns, roughly 80px width per column, 100px height per row
-                          const col = Math.min(3, Math.max(0, Math.floor((info.point.x - 24) / 80)));
-                          const row = Math.max(0, Math.floor((info.point.y - 120) / 110));
-                          
-                          // Convert col/row to index
-                          // If profile-widget is at top, it takes 4 slots
-                          let targetIndex = row * 4 + col;
-                          
-                          // Limit targetIndex to array bounds
-                          targetIndex = Math.min(installedApps.length - 1, Math.max(0, targetIndex));
-                          
-                          if (targetIndex !== index) {
-                            const newList = [...installedApps];
-                            const [movedItem] = newList.splice(index, 1);
-                            newList.splice(targetIndex, 0, movedItem);
-                            setInstalledApps(newList);
-                          }
-                        }}
-                        onDragEnd={(_, info) => {
-                          if (!isJiggling) return;
-                          // Check if dragged to dock (bottom of screen)
-                          // Screen height is 812, dock is at bottom ~700
-                          if (info.point.y > 680 && dockApps.length < 4) {
-                            setInstalledApps(prev => prev.filter(a => a !== id));
-                            setDockApps(prev => [...prev, id]);
-                          }
-                        }}
-                        className="touch-none"
-                      >
-                        <AppIcon 
-                          id={id} 
-                          label={appNames[id]} 
-                          color={getIconColor(id)} 
-                          icon={getIconElement(id)} 
-                          isDarkMode={isDarkMode}
-                          isJiggling={isJiggling}
-                          customSrc={customIcons[id]} 
-                          onClick={() => openApp(id)} 
-                          onRemove={() => removeApp(id)}
-                        />
-                      </motion.div>
-                    ))}
-                    {/* Add App Button */}
-                    {isJiggling && (
-                      <motion.div 
-                        key="add-btn"
-                        layout
-                        initial={{ scale: 0 }} animate={{ scale: 1 }}
-                        className="flex flex-col items-center gap-1"
-                      >
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); setIsAddingApp(true); }}
-                          className="w-[62px] h-[62px] rounded-[15px] bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 text-white active:scale-90 transition-transform"
-                        >
-                          <Plus size={32} />
-                        </button>
-                        <span className="text-[11px] font-medium text-white">加入</span>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
+            <motion.div key="home" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, scale: 1.1 }} className="flex-1 bg-cover bg-center relative" style={{ backgroundImage: `url(${homeWallpaper})` }}
+              onPointerDown={(e) => e.target === e.currentTarget && setIsJiggling(false)}>
+              <div className="grid grid-cols-4 gap-4 p-6 pt-24">
+                {installedApps.map((id) => (
+                  <AppIcon key={id} id={id} label={appNames[id] || id} color={getIconColor(id)} icon={getIconElement(id)} isDarkMode={isDarkMode} isJiggling={isJiggling} onClick={() => openApp(id)} onRemove={() => removeApp(id)} />
+                ))}
               </div>
-
-              {/* Stop Jiggle Button if active */}
-              {isJiggling && (
-                <div className="absolute top-14 right-6 z-[200]">
-                  <button onClick={() => setIsJiggling(false)} className="bg-white/20 backdrop-blur-xl px-3 py-1 rounded-full text-white text-xs font-bold border border-white/20 active:opacity-50">完成</button>
-                </div>
-              )}
-
-              {/* Add App Modal */}
-              <AnimatePresence>
-                {isAddingApp && (
-                  <motion.div 
-                    initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
-                    className="absolute inset-0 bg-black/60 backdrop-blur-md z-[300] flex flex-col pt-20 px-6 rounded-t-[40px]"
-                  >
-                    <div className="flex items-center justify-between mb-8">
-                      <h2 className="text-3xl font-bold text-white">App 資料庫</h2>
-                      <button onClick={() => setIsAddingApp(false)} className="text-[#76DE84] font-bold">取消</button>
-                    </div>
-                    <div className="grid grid-cols-3 gap-6">
-                      {(Object.keys(appNames) as AppId[]).filter(id => !installedApps.includes(id) && !dockApps.includes(id)).map(id => (
-                        <div key={id} onClick={() => addApp(id)} className="flex flex-col items-center gap-2 cursor-pointer active:scale-95 transition-all">
-                          <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center border border-white/10 text-white overflow-hidden shadow-lg">
-                            {customIcons[id] ? <img src={customIcons[id]} className="w-full h-full object-cover" /> : (
-                              <div className="flex flex-col items-center">
-                                {id === 'store' && <ShoppingBag size={28} />}
-                                {id === 'messages' && <MessageCircle size={28} />}
-                                {id === 'kitchen' && <UtensilsCrossed size={28} />}
-                                {id === 'wallet' && <WalletIcon size={28} />}
-                                {id === 'garden' && <Leaf size={28} />}
-                                {id === 'photos' && <Mail size={28} />}
-                                {id === 'characters' && <Users size={28} />}
-                                {id === 'warehouse' && <Archive size={28} />}
-                                {id === 'fishing' && <FishIcon size={28} />}
-                                {id === 'wheel' && <Disc size={28} />}
-                                {id === 'dex' && <BookOpen size={28} />}
-                              </div>
-                            )}
-                          </div>
-                          <span className="text-xs text-white/80">{appNames[id] || id}</span>
-                        </div>
-                      ))}
-                    </div>
-                    {(installedApps.length + dockApps.length) === 6 && (
-                      <div className="mt-20 text-center text-white/40 text-sm">所有 App 都已加入主畫面</div>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* Bottom Dock */}
-              <div className={`absolute bottom-6 left-3 right-3 h-[90px] ${isDarkMode ? 'bg-black/30' : 'bg-white/20'} backdrop-blur-3xl rounded-[35px] flex items-center justify-center p-2 border border-white/20 gap-3 z-30`}>
-                <div 
-                  className="flex items-center gap-3"
-                  onPointerDown={(e) => e.stopPropagation()}
-                >
-                  <AnimatePresence mode="popLayout">
-                    {dockApps.map((id, index) => (
-                      <motion.div 
-                        key={id} 
-                        layout
-                        layoutId={id}
-                        drag={isJiggling}
-                        dragListener={isJiggling}
-                        dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
-                        dragElastic={0.9}
-                        whileDrag={{ 
-                          scale: 1.2, 
-                          zIndex: 50,
-                          transition: { duration: 0.1 }
-                        }}
-                        onDrag={(_, info) => {
-                          if (!isJiggling) return;
-                          
-                          // Dock reordering logic (horizontal)
-                          // Dock items are roughly 60px wide + 12px gap
-                          const targetIndex = Math.min(dockApps.length - 1, Math.max(0, Math.floor((info.point.x - 40) / 75)));
-                          
-                          if (targetIndex !== index) {
-                            const newList = [...dockApps];
-                            const [movedItem] = newList.splice(index, 1);
-                            newList.splice(targetIndex, 0, movedItem);
-                            setDockApps(newList);
-                          }
-                        }}
-                        onDragEnd={(_, info) => {
-                          if (!isJiggling) return;
-                          if (info.point.y < 600) {
-                            setInstalledApps(prev => [...prev, id]);
-                            setDockApps(prev => prev.filter(a => a !== id));
-                          }
-                        }}
-                        className="touch-none"
-                      >
-                        <AppIcon 
-                          id={id} 
-                          label="" 
-                          color={getIconColor(id)} 
-                          icon={getIconElement(id)} 
-                          isDarkMode={isDarkMode}
-                          isJiggling={isJiggling}
-                          customSrc={customIcons[id]} 
-                          onClick={() => openApp(id)} 
-                          onRemove={() => removeDockApp(id)}
-                        />
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
-                </div>
+              <div className="absolute bottom-6 left-3 right-3 h-[90px] bg-white/20 backdrop-blur-3xl rounded-[35px] flex items-center justify-around px-4 border border-white/20 z-30">
+                {dockApps.map(id => (
+                  <AppIcon key={id} id={id} label="" color={getIconColor(id)} icon={getIconElement(id)} isDarkMode={isDarkMode} isJiggling={isJiggling} onClick={() => openApp(id)} onRemove={() => removeDockApp(id)} />
+                ))}
               </div>
             </motion.div>
           )}
 
+          {/* App 開啟後的畫面 */}
           {screenState === ScreenState.AppOpen && (
-            <motion.div key="app" initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="flex-1 flex flex-col bg-white z-50 rounded-t-[40px] overflow-hidden">
+            <motion.div key="app" initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} className="flex-1 bg-white z-50 overflow-hidden flex flex-col rounded-t-[40px]">
               {renderAppContent()}
-              <div onClick={goHome} className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-36 h-1.5 bg-black/10 rounded-full z-[100] cursor-pointer hover:bg-black/20" />
+              <div onClick={goHome} className="h-1.5 w-36 bg-black/10 rounded-full mx-auto my-2 cursor-pointer hover:bg-black/20 transition-colors" />
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* 底部導航條 (Home Indicator) - 確保這段在手機容器內 */}
+        {screenState === ScreenState.Home && (
+          <div onClick={goHome} className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-36 h-1.5 bg-white/40 rounded-full z-[100] cursor-pointer hover:bg-white/60 transition-colors" />
+        )}
+
+      </div> {/* 結束手機外殼 */}
+    </div> /* 結束背景容器 */
+  );
+} // 結束 App 元件
         
         {/* Navigation Indicator Overlay for Home Screen */}
         {screenState === ScreenState.Home && (
