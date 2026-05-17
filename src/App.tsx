@@ -1764,6 +1764,72 @@ const MomentsApp = ({
     return { name: '未知', avatar: '❓', isUser: false };
   };
 
+// --- 導出存檔檔案 (.txt) ---
+  const handleExportSave = () => {
+    const saveData = {
+      userProfile,
+      walletBalance,
+      characters,
+      warehouseItems,
+      transactions,
+      customIcons,
+      appNames,
+      gardenPatches,
+      letters,
+      momentPosts,
+      aiSettings
+    };
+    
+    const blob = new Blob([JSON.stringify(saveData, null, 2)], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    // 檔名包含日期，例如: phone_save_2023-10-27.txt
+    link.download = `phone_save_${new Date().toISOString().split('T')[0]}.txt`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // --- 導入存檔檔案 ---
+  const handleImportSave = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.txt,.json';
+    input.onchange = (e: any) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          try {
+            const content = event.target?.result as string;
+            const data = JSON.parse(content);
+            
+            // 批量更新所有狀態
+            if (data.userProfile) setUserProfile(data.userProfile);
+            if (data.walletBalance !== undefined) setWalletBalance(data.walletBalance);
+            if (data.characters) setCharacters(data.characters);
+            if (data.warehouseItems) setWarehouseItems(data.warehouseItems);
+            if (data.transactions) setTransactions(data.transactions);
+            if (data.customIcons) setCustomIcons(data.customIcons);
+            if (data.appNames) setAppNames(data.appNames);
+            if (data.gardenPatches) setGardenPatches(data.gardenPatches);
+            if (data.letters) setLetters(data.letters);
+            if (data.momentPosts) setMomentPosts(data.momentPosts);
+            if (data.aiSettings) setAiSettings(data.aiSettings);
+
+            alert("存檔導入成功！系統即將重新載入。");
+            // 建議重新整理以確保所有狀態同步
+            setTimeout(() => window.location.reload(), 500);
+          } catch (err) {
+            alert("檔案格式錯誤，無法讀取存檔。");
+          }
+        };
+        reader.readAsText(file);
+      }
+    };
+    input.click();
+  };
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const reader = new FileReader();
@@ -3510,16 +3576,60 @@ const renderSettings = () => {
               </div>
             )}
 
+{/* 存檔管理 (導入與導出檔案) */}
             {settingsTab === 'privacy' && (
-              <div className="space-y-4">
-                <button onClick={() => { navigator.clipboard.writeText(JSON.stringify({userProfile, walletBalance, characters, warehouseItems})); alert("存檔已複製"); }} className={`w-full py-4 rounded-2xl font-bold ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white shadow-sm'}`}>導出存檔代碼</button>
-                <button onClick={() => { if(confirm("確定重置？")) { localStorage.clear(); location.reload(); }}} className="w-full py-4 rounded-2xl font-bold bg-red-500 text-white">重置所有資料</button>
+              <div className="space-y-6 pb-20">
+                <div className="px-2">
+                  <h4 className="text-[10px] font-bold opacity-40 uppercase tracking-widest mb-3">資料備份</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* 導出按鈕 */}
+                    <button 
+                      onClick={handleExportSave}
+                      className={`flex flex-col items-center justify-center gap-3 p-6 rounded-[32px] transition-all active:scale-95 ${isDarkMode ? 'bg-[#1c1c1e] text-blue-400' : 'bg-white text-blue-500 shadow-sm'}`}
+                    >
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${isDarkMode ? 'bg-blue-500/10' : 'bg-blue-50'}`}>
+                        <Download size={28} />
+                      </div>
+                      <span className="font-bold text-sm text-neutral-600 dark:text-neutral-300">導出檔案</span>
+                    </button>
+
+                    {/* 導入按鈕 */}
+                    <button 
+                      onClick={handleImportSave}
+                      className={`flex flex-col items-center justify-center gap-3 p-6 rounded-[32px] transition-all active:scale-95 ${isDarkMode ? 'bg-[#1c1c1e] text-emerald-400' : 'bg-white text-emerald-500 shadow-sm'}`}
+                    >
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${isDarkMode ? 'bg-emerald-500/10' : 'bg-emerald-50'}`}>
+                        <Upload size={28} />
+                      </div>
+                      <span className="font-bold text-sm text-neutral-600 dark:text-neutral-300">導入檔案</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="px-2 space-y-4">
+                  <h4 className="text-[10px] font-bold opacity-40 uppercase tracking-widest px-1">危險區域</h4>
+                  <button 
+                    onClick={() => {
+                      if (confirm("確定要重置所有玩家資料嗎？這將刪除包含釣魚、花園、訊息及所有自定義設定。此操作無法復原。")) {
+                        localStorage.clear();
+                        window.location.reload();
+                      }
+                    }}
+                    className={`w-full py-4 rounded-2xl flex items-center justify-center gap-2 font-bold transition-all active:bg-red-500 active:text-white ${isDarkMode ? 'bg-[#1c1c1e] text-red-500 border border-red-500/20' : 'bg-white text-red-500 shadow-sm'}`}
+                  >
+                    <Trash2 size={18} />
+                    重置所有資料
+                  </button>
+                </div>
+
+                <div className="p-4 text-center">
+                  <p className="text-[11px] text-neutral-500 italic">
+                    ※ 導出功能將下載一個 .txt 文字檔到您的設備中。<br/>
+                    ※ 導入時請選擇該檔案即可還原所有手機內容。
+                  </p>
+                </div>
               </div>
             )}
-          </div>
-        </div>
-      );
-    }
 
     // --- 設定主頁面 (iOS 風格) ---
     return (
