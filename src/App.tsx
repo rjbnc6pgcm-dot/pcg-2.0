@@ -3074,17 +3074,9 @@ const simulateAiDescriber = async (char: GamePlayer, topic: string) => {
 };
 
 export default function App() {
-  const [settingsTab, setSettingsTab] = useState<'main' | 'general' | 'appearance' | 'privacy' | 'icons' | 'aiConfig'>('main');
-  const [isSpinning, setIsSpinning] = useState(false);
-  const [wheelRotation, setWheelRotation] = useState(0);
-  const [wheelRewards] = useState([10, 50, 100, 150, 100, 100, 0, 50]); // 轉盤獎金
-  // --- 1. 所有的變數宣告 (useState & useRef) ---
+// --- 1. 所有的變數宣告 (useState & useRef) - 確保每個只出現一次 ---
   const [screenState, setScreenState] = useState<ScreenState>(ScreenState.Locked);
   const [activeApp, setActiveApp] = useState<AppId | null>(null);
-  const [settingsTab, setSettingsTab] = useState<'main' | 'general' | 'appearance' | 'privacy' | 'icons' | 'aiConfig'>('main');
-  const [isSpinning, setIsSpinning] = useState(false);
-  const [wheelRotation, setWheelRotation] = useState(0);
-  const wheelRewards = [10, 50, 100, 200, 500, 1000, 0, 50];
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -3093,6 +3085,12 @@ export default function App() {
   const [isAddingApp, setIsAddingApp] = useState(false);
   const [isJiggling, setIsJiggling] = useState(false);
   const [typingChatId, setTypingChatId] = useState<string | null>(null);
+
+  // 設定與轉盤專用狀態
+  const [settingsTab, setSettingsTab] = useState<'main' | 'general' | 'appearance' | 'privacy' | 'icons' | 'aiConfig'>('main');
+  const [isSpinning, setIsSpinning] = useState(false);
+  const [wheelRotation, setWheelRotation] = useState(0);
+  const wheelRewards = [10, 50, 100, 200, 500, 1000, 0, 50];
 
   const [lockWallpaper, setLockWallpaper] = useState<string>("https://storage.googleapis.com/fun-app-assets/user-uploads/input_file_0.png");
   const [homeWallpaper, setHomeWallpaper] = useState<string>("https://storage.googleapis.com/fun-app-assets/user-uploads/input_file_0.png");
@@ -3122,7 +3120,6 @@ export default function App() {
   ]);
   const [momentPosts, setMomentPosts] = useState<MomentPost[]>([]);
   const [dailyStoreItems, setDailyStoreItems] = useState<any>({ fish: [], crops: [], gifts: [] });
-  const [wheelSpins, setWheelSpins] = useState(3);
 
   const [customIcons, setCustomIcons] = useState<Record<string, string>>({});
   const [appNames, setAppNames] = useState<Record<string, string>>({});
@@ -3131,16 +3128,17 @@ export default function App() {
 
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
 
-useEffect(() => {
+  // --- 2. 所有的功能函式 ---
+
+  // 初始化商城
+  useEffect(() => {
     const shuffle = (arr: any[]) => [...arr].sort(() => 0.5 - Math.random());
     setDailyStoreItems({
-      fish: shuffle(FISH_TYPES).slice(0, 6).map(f => ({ id: f.id, price: 100 })), // 這裡可以根據稀有度設價格
+      fish: shuffle(FISH_TYPES).slice(0, 6).map(f => ({ id: f.id, price: 100 })),
       crops: shuffle(CROP_TYPES).slice(0, 6).map(c => ({ id: c.id, price: c.sellPrice })),
       gifts: shuffle(POSSIBLE_GIFTS).slice(0, 6).map(g => ({ id: g.id, price: g.price }))
     });
   }, []);
-
-  // --- 2. 所有的功能函式 ---
 
   const addTransaction = (type: 'income' | 'expense' | 'transfer', amount: number, title: string) => {
     const newTx: Transaction = { id: Date.now().toString(), type, amount, title, timestamp: new Date().toLocaleString() };
@@ -3150,17 +3148,8 @@ useEffect(() => {
   const removeApp = (id: AppId) => setInstalledApps(prev => prev.filter(a => a !== id));
   const removeDockApp = (id: AppId) => setDockApps(prev => prev.filter(a => a !== id));
   const addApp = (id: AppId) => { setInstalledApps(prev => [...prev, id]); setIsAddingApp(false); };
-
-  const goHome = () => { setScreenState(ScreenState.Home); setActiveApp(null); setSelectedChatId(null); setIsJiggling(false); };
+  const goHome = () => { setScreenState(ScreenState.Home); setActiveApp(null); setSelectedChatId(null); setIsJiggling(false); setSettingsTab('main'); };
   const openApp = (app: AppId) => { if (!isJiggling) { setActiveApp(app); setScreenState(ScreenState.AppOpen); } };
-
-  const handleHomePointerDown = () => {
-    longPressTimer.current = setTimeout(() => setIsJiggling(true), 800);
-  };
-
-  const handleHomePointerUp = () => {
-    if (longPressTimer.current) clearTimeout(longPressTimer.current);
-  };
 
   const onUnlockPatch = (id: number) => {
     if (walletBalance >= 300) {
@@ -3172,10 +3161,7 @@ useEffect(() => {
 
   const onPlant = (id: number) => {
     const crop = CROP_TYPES[Math.floor(Math.random() * CROP_TYPES.length)];
-    setGardenPatches(prev => prev.map(p => p.id === id ? { 
-      ...p, status: 'growing', cropId: crop.id, plantedTime: Date.now(), 
-      needsWatering: false, waterCount: 0 
-    } : p));
+    setGardenPatches(prev => prev.map(p => p.id === id ? { ...p, status: 'growing', cropId: crop.id, plantedTime: Date.now(), needsWatering: false } : p));
   };
 
   const onWater = (id: number) => {
@@ -3237,78 +3223,9 @@ useEffect(() => {
     } catch (e) { return "AI 連線失敗"; }
   };
 
-const renderSettings = () => {
-    const t = TRANSLATIONS[language];
-    
-    if (settingsTab !== 'main') {
-      return (
-        <div className={`flex-1 flex flex-col h-full ${isDarkMode ? 'bg-black text-white' : 'bg-[#f2f2f7] text-black'}`}>
-          <Header title={t[settingsTab as keyof typeof t] || '設定'} onBack={() => setSettingsTab('main')} isDarkMode={isDarkMode} />
-          <div className="flex-1 overflow-y-auto p-4 space-y-6">
-            {settingsTab === 'general' && (
-              <div className={`rounded-xl overflow-hidden divide-y ${isDarkMode ? 'bg-[#1c1c1e] divide-[#38383a]' : 'bg-white divide-neutral-100'}`}>
-                {Object.values(Language).map(lang => (
-                  <div key={lang} onClick={() => setLanguage(lang)} className="px-5 py-3 flex items-center justify-between cursor-pointer active:opacity-70">
-                    <span className="text-sm font-medium">{lang === Language.ZH_TW ? '繁體中文' : lang === Language.ZH_CN ? '简体中文' : lang === Language.EN ? 'English' : '日本語'}</span>
-                    {language === lang && <Check size={18} className="text-[#76DE84]" />}
-                  </div>
-                ))}
-              </div>
-            )}
-            {settingsTab === 'appearance' && (
-              <div className="space-y-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <WallpaperThumb label={t.lockScreen} src={lockWallpaper} onClick={() => {
-                    const url = prompt('輸入鎖定畫面圖片網址', lockWallpaper);
-                    if (url) setLockWallpaper(url);
-                  }} />
-                  <WallpaperThumb label={t.homeScreen} src={homeWallpaper} onClick={() => {
-                    const url = prompt('輸入主畫面圖片網址', homeWallpaper);
-                    if (url) setHomeWallpaper(url);
-                  }} />
-                </div>
-                <div className={`rounded-xl overflow-hidden divide-y ${isDarkMode ? 'bg-[#1c1c1e] divide-[#38383a]' : 'bg-white divide-neutral-100'}`}>
-                   <div className="px-5 py-3 flex items-center justify-between">
-                     <span className="text-sm font-medium">{t.darkMode}</span>
-                     <button onClick={() => setIsDarkMode(!isDarkMode)} className={`w-12 h-6 rounded-full relative transition-colors ${isDarkMode ? 'bg-[#76DE84]' : 'bg-neutral-300'}`}>
-                       <motion.div animate={{ x: isDarkMode ? 24 : 4 }} className="absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm" />
-                     </button>
-                   </div>
-                </div>
-              </div>
-            )}
-            {settingsTab === 'privacy' && (
-              <div className="space-y-4">
-                <button onClick={() => {
-                  const data = JSON.stringify({ userProfile, walletBalance, characters, warehouseItems, transactions });
-                  navigator.clipboard.writeText(data);
-                  alert(t.success);
-                }} className={`w-full py-3 rounded-xl font-bold ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white'}`}>{t.exportSave}</button>
-                <button onClick={() => {
-                  if (confirm(t.resetConfirmDesc)) { localStorage.clear(); location.reload(); }
-                }} className="w-full py-3 rounded-xl font-bold bg-red-500 text-white">{t.reset}</button>
-              </div>
-            )}
-          </div>
-        </div>
-      );
-    }
+  // --- 3. App 專用渲染函式 (恢復原本的精緻設計) ---
 
-    return (
-      <div className={`flex-1 flex flex-col h-full ${isDarkMode ? 'bg-black text-white' : 'bg-[#f2f2f7] text-black'}`}>
-        <div className="px-4 pt-16 pb-3 text-3xl font-bold">{t.settings}</div>
-        <div className="flex-1 overflow-y-auto p-4 space-y-6">
-          <div className={`rounded-xl overflow-hidden divide-y ${isDarkMode ? 'bg-[#1c1c1e] divide-[#38383a]' : 'bg-white divide-neutral-100'}`}>
-            <SettingsRow icon={<Globe size={18} color="white" />} iconBg="#007AFF" label={t.general} onClick={() => setSettingsTab('general')} />
-            <SettingsRow icon={<Palette size={18} color="white" />} iconBg="#FF2D55" label={t.appearance} onClick={() => setSettingsTab('appearance')} />
-            <SettingsRow icon={<Lock size={18} color="white" />} iconBg="#5856D6" label={t.privacy} onClick={() => setSettingsTab('privacy')} />
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-const renderMessagesApp = () => {
+  const renderMessagesApp = () => {
     if (selectedChatId) {
       const char = characters.find(c => c.id === selectedChatId);
       if (!char) return null;
@@ -3357,7 +3274,7 @@ const renderMessagesApp = () => {
           {characters.map(c => (
             <div key={c.id} onClick={() => setSelectedChatId(c.id)} className={`px-4 py-3 flex items-center gap-3 border-b ${isDarkMode ? 'border-white/5 active:bg-white/5' : 'border-neutral-100 active:bg-neutral-50'}`}>
               <div className="w-14 h-14 rounded-full overflow-hidden bg-neutral-200 shrink-0 text-2xl flex items-center justify-center border border-white/10">
-                {c.avatar}
+                <AvatarImage src={c.avatar} className="w-full h-full object-cover" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex justify-between items-center mb-0.5">
@@ -3368,26 +3285,41 @@ const renderMessagesApp = () => {
               </div>
             </div>
           ))}
+          {characters.length === 0 && <div className="p-20 text-center text-neutral-400">尚無聯絡人</div>}
         </div>
       </div>
     );
   };
 
-const renderSettings = () => {
+  const renderSettings = () => {
     const t = TRANSLATIONS[language];
     if (settingsTab !== 'main') {
       return (
         <div className={`flex-1 flex flex-col h-full ${isDarkMode ? 'bg-black text-white' : 'bg-[#f2f2f7] text-black'}`}>
           <Header title={t[settingsTab as keyof typeof t] || '設定'} onBack={() => setSettingsTab('main')} isDarkMode={isDarkMode} />
-          <div className="p-4">
+          <div className="p-4 space-y-6">
              {settingsTab === 'general' && (
-               <div className={`rounded-xl overflow-hidden divide-y ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white'}`}>
+               <div className={`rounded-xl overflow-hidden divide-y ${isDarkMode ? 'bg-[#1c1c1e] divide-[#38383a]' : 'bg-white'}`}>
                  {Object.values(Language).map(lang => (
-                   <div key={lang} onClick={() => setLanguage(lang)} className="p-4 flex justify-between items-center cursor-pointer">
-                     <span>{lang}</span>
+                   <div key={lang} onClick={() => setLanguage(lang)} className="p-4 flex justify-between items-center cursor-pointer active:bg-neutral-500/10">
+                     <span>{lang === Language.ZH_TW ? '繁體中文' : lang === Language.ZH_CN ? '简体中文' : lang === Language.EN ? 'English' : '日本語'}</span>
                      {language === lang && <Check size={18} className="text-[#76DE84]" />}
                    </div>
                  ))}
+               </div>
+             )}
+             {settingsTab === 'appearance' && (
+               <div className="space-y-6">
+                 <div className="grid grid-cols-2 gap-4">
+                   <WallpaperThumb label={t.lockScreen} src={lockWallpaper} onClick={() => { const u = prompt('網址?', lockWallpaper); if(u) setLockWallpaper(u); }} />
+                   <WallpaperThumb label={t.homeScreen} src={homeWallpaper} onClick={() => { const u = prompt('網址?', homeWallpaper); if(u) setHomeWallpaper(u); }} />
+                 </div>
+                 <div className={`rounded-xl p-4 flex justify-between items-center ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white'}`}>
+                    <span>{t.darkMode}</span>
+                    <button onClick={() => setIsDarkMode(!isDarkMode)} className={`w-12 h-6 rounded-full relative transition-colors ${isDarkMode ? 'bg-[#76DE84]' : 'bg-neutral-300'}`}>
+                      <motion.div animate={{ x: isDarkMode ? 24 : 4 }} className="absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm" />
+                    </button>
+                 </div>
                </div>
              )}
           </div>
@@ -3398,16 +3330,19 @@ const renderSettings = () => {
       <div className={`flex-1 flex flex-col h-full ${isDarkMode ? 'bg-black text-white' : 'bg-[#f2f2f7] text-black'}`}>
         <div className="px-6 pt-16 pb-3 text-3xl font-black">{t.settings}</div>
         <div className="p-4 space-y-4">
-           <div className={`rounded-xl overflow-hidden divide-y ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white'}`}>
+           <div className={`rounded-xl overflow-hidden divide-y ${isDarkMode ? 'bg-[#1c1c1e] divide-[#38383a]' : 'bg-white divide-neutral-100'}`}>
              <SettingsRow icon={<Globe size={18} color="white" />} iconBg="#007AFF" label={t.general} onClick={() => setSettingsTab('general')} />
              <SettingsRow icon={<Palette size={18} color="white" />} iconBg="#FF2D55" label={t.appearance} onClick={() => setSettingsTab('appearance')} />
+           </div>
+           <div className={`rounded-xl p-4 text-center text-red-500 font-bold ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white'}`} onClick={() => { if(confirm(t.resetConfirmDesc)) { localStorage.clear(); location.reload(); }}}>
+             {t.reset}
            </div>
         </div>
       </div>
     );
   };
 
-const renderWheelApp = () => {
+  const renderWheelApp = () => {
     const handleSpin = () => {
       if (isSpinning) return;
       setIsSpinning(true);
@@ -3429,169 +3364,52 @@ const renderWheelApp = () => {
         <div className="relative">
           <motion.div animate={{ rotate: wheelRotation }} transition={{ duration: 4, ease: [0.13, 0, 0, 1] }} className="w-72 h-72 rounded-full border-[10px] border-amber-600 relative overflow-hidden shadow-2xl bg-white">
             {wheelRewards.map((r, i) => (
-              <div key={i} className="absolute top-0 left-1/2 w-1 h-1/2 origin-bottom" style={{ transform: `translateX(-50%) rotate(${i * (360/wheelRewards.length)}deg)` }}>
-                <span className="mt-2 text-[10px] font-black">${r}</span>
+              <div key={i} className="absolute top-0 left-1/2 w-1 h-1/2 origin-bottom flex flex-col items-center" style={{ transform: `translateX(-50%) rotate(${i * (360/wheelRewards.length)}deg)` }}>
+                <span className="mt-2 text-[10px] font-black text-amber-800">${r}</span>
               </div>
             ))}
           </motion.div>
           <div className="absolute top-[-10px] left-1/2 -translate-x-1/2 w-0 h-0 border-l-[15px] border-l-transparent border-r-[15px] border-r-transparent border-t-[30px] border-t-red-600 z-10" />
         </div>
-        <button onClick={handleSpin} disabled={isSpinning} className="mt-14 px-12 py-4 rounded-full bg-amber-600 text-white font-black text-xl shadow-xl">{isSpinning ? 'SPINNING...' : 'SPIN NOW'}</button>
+        <button onClick={handleSpin} disabled={isSpinning} className={`mt-14 px-12 py-4 rounded-full font-black text-xl shadow-xl transition-all ${isSpinning ? 'bg-neutral-400' : 'bg-amber-600 text-white hover:bg-amber-700'}`}>
+          {isSpinning ? 'SPINNING...' : 'SPIN NOW'}
+        </button>
       </div>
     );
   };
 
-const renderCharacters = () => (
+  const renderCharacters = () => (
     <div className={`flex-1 flex flex-col h-full ${isDarkMode ? 'bg-black text-white' : 'bg-[#f2f2f7] text-black'}`}>
-      <div className="px-6 pt-16 pb-3 flex justify-between items-center">
+      <div className="px-6 pt-16 pb-3 flex justify-between items-center bg-opacity-80 backdrop-blur-md sticky top-0">
         <span className="text-3xl font-black">角色</span>
         <button onClick={() => {
           const name = prompt("角色名稱?");
           if(name) setCharacters([...characters, { id: Date.now().toString(), name, avatar: getRandomAnimalEmoji(), messages: [], favorability: 0 } as any]);
         }} className="text-[#76DE84] font-bold">+ 新增</button>
       </div>
-      <div className="p-4 space-y-3">
+      <div className="p-4 space-y-3 overflow-y-auto">
         {characters.map(c => (
           <div key={c.id} className={`p-4 rounded-2xl flex items-center gap-4 ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white shadow-sm'}`}>
-            <div className="text-3xl">{c.avatar}</div>
+            <div className="w-12 h-12 rounded-full overflow-hidden bg-neutral-100 flex items-center justify-center text-2xl border border-neutral-200">
+               <AvatarImage src={c.avatar} className="w-full h-full object-cover" />
+            </div>
             <div className="flex-1 font-bold">{c.name}</div>
             <div className="text-pink-500 font-bold">❤️ {c.favorability}</div>
+            <button onClick={() => setCharacters(characters.filter(x => x.id !== c.id))} className="text-red-400 text-xs">刪除</button>
           </div>
         ))}
+        {characters.length === 0 && <div className="p-20 text-center text-neutral-400">點擊上方新增角色</div>}
       </div>
     </div>
   );
 
-// --- 3. 完整的 App 內容渲染 ---
+  // --- 4. 渲染切換器 ---
   const renderAppContent = () => {
-    if (activeApp === 'messages') {
-      if (selectedChatId) {
-        const char = characters.find(c => c.id === selectedChatId);
-        if (!char) return null;
-        return (
-          <div className="flex-1 flex flex-col h-full bg-neutral-50">
-            <div className="px-4 pt-16 pb-3 flex items-center border-b bg-white/80 backdrop-blur-md sticky top-0 z-10">
-              <button onClick={() => setSelectedChatId(null)} className="text-[#76DE84] flex items-center"><ChevronLeft /> 列表</button>
-              <h2 className="flex-1 text-center font-bold mr-10">{char.name}</h2>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {char.messages.map((m, i) => (
-                <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[80%] px-4 py-2 rounded-2xl ${m.role === 'user' ? 'bg-[#76DE84] text-white' : 'bg-white shadow-sm'}`}>
-                    {m.text}
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="p-4 bg-white border-t flex gap-2">
-              <input 
-                className="flex-1 bg-neutral-100 rounded-full px-4 py-2 outline-none" 
-                placeholder="輸入訊息..." 
-                onKeyDown={async (e) => {
-                  if (e.key === 'Enter') {
-                    const text = (e.target as HTMLInputElement).value;
-                    if (!text) return;
-                    (e.target as HTMLInputElement).value = '';
-                    
-                    // 用戶發言
-                    const updatedChars = characters.map(c => 
-                      c.id === char.id ? { ...c, messages: [...c.messages, { role: 'user', text } as Message] } : c
-                    );
-                    setCharacters(updatedChars);
-
-                    // 呼叫 AI 回應
-                    const response = await callUniversalAI([...char.messages, { role: 'user', text }], char.settings);
-                    setCharacters(prev => prev.map(c => 
-                      c.id === char.id ? { ...c, messages: [...c.messages, { role: 'user', text }, { role: 'model', text: response }] } : c
-                    ));
-                  }
-                }}
-              />
-            </div>
-          </div>
-        );
-      }
-      return (
-        <div className="flex-1 flex flex-col h-full bg-white">
-          <div className="px-4 pt-16 pb-3 border-b text-center font-bold text-xl">訊息</div>
-          <div className="flex-1 overflow-y-auto">
-            {characters.map(c => (
-              <div key={c.id} onClick={() => setSelectedChatId(c.id)} className="p-4 flex items-center gap-3 border-b active:bg-neutral-50">
-                <div className="w-12 h-12 rounded-full overflow-hidden bg-neutral-100 border text-2xl flex items-center justify-center">{c.avatar}</div>
-                <div className="flex-1">
-                  <div className="font-bold">{c.name}</div>
-                  <div className="text-sm text-neutral-500 truncate">{c.messages[c.messages.length-1]?.text || "尚無訊息"}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      );
-    }
-
     switch (activeApp) {
-      case 'settings': 
-        return (
-          <div className="flex-1 bg-[#f2f2f7] overflow-y-auto">
-            <div className="px-4 pt-16 pb-3 bg-white border-b text-center font-bold text-xl">設定</div>
-            <div className="p-4 space-y-6">
-              <div className="bg-white rounded-xl overflow-hidden divide-y">
-                <div className="p-4 flex justify-between items-center">
-                  <span>用戶名稱</span>
-                  <input className="text-right outline-none text-neutral-500" value={userProfile.name} onChange={e => setUserProfile({...userProfile, name: e.target.value})} />
-                </div>
-                <div className="p-4 flex justify-between items-center">
-                  <span>深色模式</span>
-                  <button onClick={() => setIsDarkMode(!isDarkMode)} className={`w-12 h-6 rounded-full relative transition-colors ${isDarkMode ? 'bg-[#76DE84]' : 'bg-neutral-300'}`}>
-                    <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${isDarkMode ? 'left-7' : 'left-1'}`} />
-                  </button>
-                </div>
-              </div>
-              <div className="bg-white rounded-xl p-4 text-center text-red-500 font-bold active:bg-red-50" onClick={() => { if(confirm("確定要重置所有資料嗎？")) localStorage.clear(); location.reload(); }}>
-                重置所有玩家資料
-              </div>
-            </div>
-          </div>
-        );
-      case 'characters':
-        return (
-          <div className="flex-1 bg-[#f2f2f7] flex flex-col h-full">
-            <div className="px-4 pt-16 pb-3 bg-white border-b flex justify-between items-center">
-              <span className="font-bold text-xl">角色管理</span>
-              <button onClick={() => {
-                const name = prompt("請輸入角色名稱");
-                if (name) {
-                  const newChar: Character = {
-                    id: Date.now().toString(),
-                    name, avatar: getRandomAnimalEmoji(), favorability: 0, messages: [], memos: [],
-                    gender: '不明', age: '18', personality: '溫柔', habits: '', signature: '', settings: '你是一個好朋友',
-                    minResponseTime: 1, maxResponseTime: 3, maxMessagesPerTurn: 1
-                  };
-                  setCharacters([...characters, newChar]);
-                }
-              }} className="text-[#76DE84] font-bold">+ 新增</button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              {characters.map(c => (
-                <div key={c.id} className="bg-white p-4 rounded-xl flex items-center gap-4 shadow-sm">
-                  <div className="text-3xl">{c.avatar}</div>
-                  <div className="flex-1 font-bold">{c.name}</div>
-                  <div className="text-pink-500 font-bold text-sm">❤️ {c.favorability}</div>
-                  <button onClick={() => setCharacters(characters.filter(x => x.id !== c.id))} className="text-red-400 text-xs">刪除</button>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-
-const renderAppContent = () => {
-    switch (activeApp) {
-      case 'messages': return renderMessagesApp(); // 連接到剛才貼的函式
-      case 'settings': return renderSettings();    // 連接到剛才貼的函式
-      case 'wheel': return renderWheelApp();       // 連接到剛才貼的函式
-      case 'characters': return renderCharacters(); // 連接到剛才貼的函式
-
-      // 其他原本就有的 App (Fishing, Garden, Store...)
+      case 'messages': return renderMessagesApp();
+      case 'settings': return renderSettings();
+      case 'wheel': return renderWheelApp();
+      case 'characters': return renderCharacters();
       case 'game': return <GameApp characters={characters} userProfile={userProfile} isDarkMode={isDarkMode} goHome={goHome} aiSettings={aiSettings} walletBalance={walletBalance} setWalletBalance={setWalletBalance} setCharacters={setCharacters} addTransaction={addTransaction} callUniversalAI={callUniversalAI} />;
       case 'garden': return <GardenApp patches={gardenPatches} isDarkMode={isDarkMode} goHome={goHome} onUnlockPatch={onUnlockPatch} onPlant={onPlant} onWater={onWater} onHarvest={onHarvest} />;
       case 'kitchen': return <KitchenApp isDarkMode={isDarkMode} goHome={goHome} warehouseItems={warehouseItems} setWarehouseItems={setWarehouseItems} characters={characters} setCharacters={setCharacters} />;
@@ -3602,37 +3420,15 @@ const renderAppContent = () => {
       case 'photos': return <MailboxApp isDarkMode={isDarkMode} goHome={goHome} letters={letters} setLetters={setLetters} characters={characters} userProfile={userProfile} />;
       case 'dex': return <DexApp isDarkMode={isDarkMode} goHome={goHome} />;
       case 'moments': return <MomentsApp momentGroups={momentGroups} setMomentGroups={setMomentGroups} momentPosts={momentPosts} setMomentPosts={setMomentPosts} characters={characters} userProfile={userProfile} isDarkMode={isDarkMode} goHome={goHome} />;
-      case 'wheel':
-        return (
-          <div className="flex-1 flex flex-col items-center justify-center bg-amber-50 p-6 pt-20">
-            <h2 className="text-2xl font-bold mb-8 text-amber-800">每日轉盤</h2>
-            <div className="w-64 h-64 rounded-full border-8 border-amber-600 bg-white shadow-2xl relative flex items-center justify-center overflow-hidden">
-               <div className="absolute inset-0 bg-gradient-to-tr from-amber-200 to-transparent" />
-               <Disc size={120} className="text-amber-500 animate-spin-slow" />
-            </div>
-            <button 
-              onClick={() => {
-                const win = Math.floor(Math.random() * 100) + 10;
-                setWalletBalance(prev => prev + win);
-                addTransaction('income', win, '每日轉盤獎勵');
-                alert(`恭喜獲得 $${win} 金幣！`);
-              }}
-              className="mt-12 px-10 py-3 bg-amber-600 text-white rounded-full font-bold shadow-lg active:scale-95 transition-transform"
-            >
-              立即抽獎
-            </button>
-          </div>
-        );
       default: return <div className="p-20 text-center">App 內容載入中...</div>;
     }
   };
 
-// --- 4. 最後的畫面 Return ---
+  // --- 5. 最後的畫面 Return ---
   return (
     <div className={`min-h-screen bg-[#F0F0F0] flex items-center justify-center p-4 transition-all ${isFullScreen ? 'p-0 bg-black' : ''}`}>
       <div className="relative w-full max-w-[375px] h-[812px] bg-black rounded-[55px] border-[12px] border-neutral-900 shadow-2xl overflow-hidden flex flex-col">
         
-        {/* Status Bar */}
         <div className="absolute top-0 left-0 right-0 h-11 px-6 flex justify-between items-end pb-1.5 z-[100] text-white pointer-events-none">
           <span className="text-[14px] font-semibold">{currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
           <div className="flex gap-1.5 items-center"><Signal size={16} /><Wifi size={16} /><Battery size={20} /></div>
@@ -3682,7 +3478,7 @@ const renderAppContent = () => {
   );
 }
 
-// --- 輔助組件 (定義在 App 外面) ---
+// --- 輔助小組件 (定義在 App 外面，確保只出現一次) ---
 
 const ProfileInput = ({ label, value, isDark, onChange }: any) => (
   <div className="px-5 py-3 flex items-center"><span className="w-20 text-sm font-medium">{label}</span>
