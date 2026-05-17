@@ -3062,13 +3062,11 @@ export default function App() {
   const [isFetchingModels, setIsFetchingModels] = useState(false);
 
   // 3. 遊戲與經濟系統狀態
-  const [walletBalance, setWalletBalance] = useState(300);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [warehouseItems, setWarehouseItems] = useState<{id: string, amount: number}[]>([]);
   const [gardenPatches, setGardenPatches] = useState<GardenPatch[]>(
     Array.from({ length: 8 }, (_, i) => ({ id: i, status: i < 4 ? 'empty' : 'locked' }))
   );
-  const [characters, setCharacters] = useState<Character[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [receivedGifts, setReceivedGifts] = useState<ReceivedGift[]>([]);
   const [letters, setLetters] = useState<Letter[]>([]);
