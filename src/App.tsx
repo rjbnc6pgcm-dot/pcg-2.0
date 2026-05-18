@@ -390,7 +390,6 @@ interface Character {
   location?: string;
   locationInterval?: number;
   walletBalance?: number;
-  proactiveInterval?: number; // In hours, 0 means disabled
   lastInteractionTime?: number; // Timestamp
   transactions?: Transaction[];
   proactiveFishing?: boolean;
@@ -3399,82 +3398,6 @@ const GardenApp = ({
   const [characters, setCharacters] = useState<Character[]>([]);
 
   useEffect(() => {
-    const checkProactive = async () => {
-      const now = Date.now();
-      const currentChars = [...characters];
-
-      for (let i = 0; i < currentChars.length; i++) {
-        const char = currentChars[i];
-        if (char.proactiveInterval && char.proactiveInterval > 0) {
-          await new Promise(resolve => setTimeout(resolve, i * 3000));
-          const lastInteraction = char.lastInteractionTime || 0;
-          const threshold = char.proactiveInterval * 3600 * 1000;
-          
-          if (now - lastInteraction > threshold) {
-            setCharacters(prev => prev.map(c => c.id === char.id ? { ...c, lastInteractionTime: now } : c));
-            
-            try {
-              setTypingChatId(char.id);
-              const systemPrompt = `你現在扮演一個角色：
-角色姓名：${char.name}
-性格設定：${char.personality}
-對話風格：${char.customPrompt || '無'}
-妳對他的暱稱：${char.charNickname || '無'}
-他對妳的暱稱：${char.userNickname || '無'}
-妳與他的關係：${char.relationship || '無'}
-情況：使用者已經超過 ${char.proactiveInterval} 小時沒有理你了。
-任務：請你主動傳訊息找他聊天。可以是關心、分享或是撒嬌，必須符合你的性格。
-要求：
-1. 像通訊軟體一樣聊天，多用短句。
-2. 沉浸於角色設定。
-3. 嚴格遵守設定的「對話風格」。
-4. 使用者的姓名是 ${userProfile.name}。`;
-
-              const charHistory = char.messages.slice(-10).map(m => ({ 
-                role: (m.role === 'user' ? 'user' : 'model') as 'user' | 'model', 
-                parts: [{ text: m.text }] 
-              }));
-
-              const gAI = new GoogleGenAI({ apiKey: aiSettings.apiKey || process.env.GEMINI_API_KEY || '' });
-              const result = await gAI.models.generateContent({
-                model: "gemini-flash-latest",
-                contents: [
-                  { role: 'user', parts: [{ text: systemPrompt + "\n\n請開始你的主動對話。" }] },
-                  ...charHistory
-                ],
-                config: { systemInstruction: systemPrompt }
-              });
-
-              if (result.text) {
-                const sentences = result.text.split(/[。\n\r?!]/).filter(s => s.trim().length > 0);
-                
-                let currentMsgs = char.messages;
-                for (const sentence of sentences) {
-                  await new Promise(r => setTimeout(r, 800 + Math.random() * 1200));
-                  const newMsg: Message = { 
-                    id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
-                    role: 'model', 
-                    text: sentence.trim() 
-                  };
-                  currentMsgs = [...currentMsgs, newMsg];
-                  setCharacters(prev => prev.map(c => c.id === char.id ? { ...c, messages: currentMsgs } : c));
-                }
-              }
-            } catch (e) {
-              console.error("Proactive failed", e);
-            } finally {
-              setTypingChatId(null);
-            }
-          }
-        }
-      }
-    };
-
-    const checkInterval = setInterval(checkProactive, 60000); 
-    return () => clearInterval(checkInterval);
-  }, [characters, userProfile.name]);
-
-  useEffect(() => {
     const checkGifts = async () => {
       const now = Date.now();
       setCharacters(prev => {
@@ -3750,7 +3673,7 @@ const GardenApp = ({
 
   const [newChar, setNewChar] = useState<Partial<Character>>({
     name: '', gender: '', age: '', personality: '', habits: '', signature: '', settings: '', avatar: getRandomAnimalEmoji(), favorability: 0,
-    minResponseTime: 3, maxResponseTime: 35, maxMessagesPerTurn: 3, proactiveInterval: 0, lastInteractionTime: Date.now(),
+    minResponseTime: 3, maxResponseTime: 35, maxMessagesPerTurn: 3, lastInteractionTime: Date.now(),
     chatBackground: '', myBubbleCss: '', theirBubbleCss: '',
     charNickname: '', userNickname: '', relationship: '', location: '', locationInterval: 1,
     walletBalance: 0, transactions: [], proactiveFishing: false, proactiveGarden: false, activityLogs: [], customPrompt: '', socialStatus: ''
@@ -5595,22 +5518,7 @@ if (settingsSubPage === 'ai-config' as any) return (
 
                   <div className="space-y-4 pt-4 border-t border-neutral-100/10">
                     <div className="flex justify-between items-center text-sm font-bold opacity-60 uppercase tracking-widest px-1">
-                      <span>主動傳送訊息頻率</span>
-                      <Bot size={14} />
-                    </div>
-                    <div className="flex justify-between text-xs font-medium">
-                      <span>閒置多久後發送</span>
-                      <span className="text-blue-500 font-bold">{char.proactiveInterval ? `${char.proactiveInterval} 小時` : '已關閉'}</span>
-                    </div>
-                    <input 
-                      type="range" min="0" max="24" step="1"
-                      value={char.proactiveInterval || 0}
-                      onChange={(e) => setCharacters(prev => prev.map(c => c.id === char.id ? { ...c, proactiveInterval: parseInt(e.target.value) } : c))}
-                      className="w-full h-2 bg-neutral-200 dark:bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
-                    />
-                    <p className="text-[10px] opacity-40 text-center italic mt-2">當你長時間沒回話時，角色會主動傳訊息找你</p>
-                  </div>
-
+                      
                   <div className="space-y-4 pt-4 border-t border-neutral-100/10">
                     <div className="flex justify-between items-center text-sm font-bold opacity-60 uppercase tracking-widest px-1">
                       <span>自動參與 APP 互動</span>
