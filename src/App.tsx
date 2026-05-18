@@ -3935,8 +3935,8 @@ const renderCharacters = () => {
 
                     <div className={`p-3 rounded-xl flex items-center justify-between ${isDarkMode ? 'bg-white/5' : 'bg-white shadow-sm'}`}>
                       <div className="flex flex-col">
-                        <span className="text-xs font-bold">自動售出魚貨</span>
-                        <span className="text-[10px] opacity-40 italic">依據當天市場價格自動售出釣到的魚貨</span>
+                        <span className="text-xs font-bold">自动售出鱼货</span>
+                        <span className="text-[10px] opacity-40 italic">依据当天市场价格自动售出钓到的鱼货</span>
                       </div>
                       <button 
                         onClick={() => setCharacters(prev => prev.map(c => c.id === char.id ? { ...c, autoSellFish: !c.autoSellFish } : c))}
@@ -3948,8 +3948,8 @@ const renderCharacters = () => {
 
                     <div className={`p-3 rounded-xl flex items-center justify-between ${isDarkMode ? 'bg-white/5' : 'bg-white shadow-sm'}`}>
                       <div className="flex flex-col">
-                        <span className="text-xs font-bold">自動澆水</span>
-                        <span className="text-[10px] opacity-40 italic">允許角色在作物需要時有 80% 機率主動澆水</span>
+                        <span className="text-xs font-bold">自动浇水</span>
+                        <span className="text-[10px] opacity-40 italic">允许角色在作物需要时有 80% 机率主动浇水</span>
                       </div>
                       <button 
                         onClick={() => setCharacters(prev => prev.map(c => c.id === char.id ? { ...c, proactiveGarden: !c.proactiveGarden } : c))}
@@ -3961,8 +3961,8 @@ const renderCharacters = () => {
 
                     <div className={`p-3 rounded-xl flex items-center justify-between ${isDarkMode ? 'bg-white/5' : 'bg-white shadow-sm'}`}>
                       <div className="flex flex-col">
-                        <span className="text-xs font-bold">允許角色轉帳</span>
-                        <span className="text-[10px] opacity-40 italic">有 50% 機率在聊天時將金幣轉帳給使用者</span>
+                        <span className="text-xs font-bold">允许角色转账</span>
+                        <span className="text-[10px] opacity-40 italic">有 50% 机率在聊天时將金币转账给使用者</span>
                       </div>
                       <button 
                         onClick={() => setCharacters(prev => prev.map(c => c.id === char.id ? { ...c, canTransferToUser: !c.canTransferToUser } : c))}
@@ -3974,8 +3974,8 @@ const renderCharacters = () => {
 
                     <div className={`p-3 rounded-xl flex items-center justify-between ${isDarkMode ? 'bg-white/5' : 'bg-white shadow-sm'}`}>
                       <div className="flex flex-col">
-                        <span className="text-xs font-bold">共用貼圖庫</span>
-                        <span className="text-[10px] opacity-40 italic">允許角色在聊天中使用貼圖庫裡儲存的貼圖</span>
+                        <span className="text-xs font-bold">共用贴图库</span>
+                        <span className="text-[10px] opacity-40 italic">允许角色在聊天中使用贴图库里储存的贴图</span>
                       </div>
                       <button 
                         onClick={() => setCharacters(prev => prev.map(c => c.id === char.id ? { ...c, canUseStickers: !c.canUseStickers } : c))}
@@ -3987,8 +3987,8 @@ const renderCharacters = () => {
 
                     <div className={`p-3 rounded-xl flex items-center justify-between ${isDarkMode ? 'bg-white/5' : 'bg-white shadow-sm'}`}>
                       <div className="flex flex-col">
-                        <span className="text-xs font-bold">允許角色贈禮</span>
-                        <span className="text-[10px] opacity-40 italic">允許角色購買當日商城的禮物並贈送</span>
+                        <span className="text-xs font-bold">允许角色赠礼</span>
+                        <span className="text-[10px] opacity-40 italic">允许角色购买当日商城的礼物並赠送</span>
                       </div>
                       <button 
                         onClick={() => setCharacters(prev => prev.map(c => c.id === char.id ? { ...c, canSendGifts: !c.canSendGifts } : c))}
@@ -4000,8 +4000,8 @@ const renderCharacters = () => {
 
                     <div className={`p-3 rounded-xl flex items-center justify-between ${isDarkMode ? 'bg-white/5' : 'bg-white shadow-sm'}`}>
                       <div className="flex flex-col">
-                        <span className="text-xs font-bold">允許拍一拍</span>
-                        <span className="text-[10px] opacity-40 italic">允許角色在聊天時拍一拍你</span>
+                        <span className="text-xs font-bold">允许拍一拍</span>
+                        <span className="text-[10px] opacity-40 italic">允许角色在聊天时拍一拍你</span>
                       </div>
                       <button 
                         onClick={() => setCharacters(prev => prev.map(c => c.id === char.id ? { ...c, canPat: !c.canPat } : c))}
@@ -4014,19 +4014,19 @@ const renderCharacters = () => {
 
                   <div className="space-y-4 pt-4 border-t border-neutral-100/10">
                     <div className="flex justify-between items-center text-sm font-bold opacity-60 uppercase tracking-widest px-1">
-                      <span>偷窺者模式 (金幣流向)</span>
+                      <span>偷窥者模式 (金币流向)</span>
                       <TrendingUp size={14} />
                     </div>
                     <div className={`p-4 rounded-2xl ${isDarkMode ? 'bg-black/20' : 'bg-neutral-50'} space-y-4`}>
                       <div className="flex justify-between items-center">
-                        <span className="text-xs opacity-50">當前金幣餘額</span>
+                        <span className="text-xs opacity-50">当前金币余额</span>
                         <span className="text-xl font-black text-[#FF9500]">${char.walletBalance || 0}</span>
                       </div>
                       <div className="space-y-2">
-                        <label className="text-[10px] font-bold opacity-30 uppercase">近期交易紀錄</label>
+                        <label className="text-[10px] font-bold opacity-30 uppercase">近期交易纪录</label>
                         <div className="max-h-[150px] overflow-y-auto space-y-2 pr-1 no-scrollbar">
                           {(!char.transactions || char.transactions.length === 0) ? (
-                            <p className="text-[10px] opacity-30 text-center py-4 italic">暫無金幣異動記錄</p>
+                            <p className="text-[10px] opacity-30 text-center py-4 italic">暂无金币移动纪录</p>
                           ) : (
                             char.transactions.map(tx => (
                               <div key={tx.id} className={`flex justify-between items-center p-2.5 rounded-lg ${isDarkMode ? 'bg-white/5' : 'bg-white'} shadow-sm gap-2`}>
@@ -4043,10 +4043,10 @@ const renderCharacters = () => {
                         </div>
                       </div>
                       <div className="space-y-2 pt-2 border-t border-white/5">
-                        <label className="text-[10px] font-bold opacity-30 uppercase">近期動態紀錄</label>
+                        <label className="text-[10px] font-bold opacity-30 uppercase">近期动态纪录</label>
                         <div className="max-h-[120px] overflow-y-auto space-y-1.5 pr-1 no-scrollbar">
                           {(!char.activityLogs || char.activityLogs.length === 0) ? (
-                            <p className="text-[10px] opacity-30 text-center py-2 italic">暫無動態紀錄</p>
+                            <p className="text-[10px] opacity-30 text-center py-2 italic">暂无动态纪录</p>
                           ) : (
                             char.activityLogs.map((log, lIdx) => (
                               <div key={lIdx} className="text-[10px] opacity-60 flex gap-2 items-start">
@@ -4068,11 +4068,11 @@ const renderCharacters = () => {
                     
                     <div className="space-y-4">
                       <div className="space-y-2">
-                        <label className="text-xs font-medium">聊天背景圖</label>
+                        <label className="text-xs font-medium">聊天背景图</label>
                         <div className="flex gap-2">
                           <input 
                             className={`flex-1 ${isDarkMode ? 'bg-black/20 border-white/10' : 'bg-neutral-50 border-neutral-200'} border rounded-lg px-3 py-2 text-xs`}
-                            placeholder="輸入圖片 URL"
+                            placeholder="输入图片 URL"
                             value={previewChatBg !== null ? previewChatBg : (char.chatBackground || '')}
                             onChange={(e) => setPreviewChatBg(e.target.value)}
                           />
@@ -4095,7 +4095,7 @@ const renderCharacters = () => {
                             }}
                             className="bg-[#76DE84] text-white text-[10px] px-3 rounded-lg font-bold"
                           >
-                            上傳
+                            上传
                           </button>
                         </div>
                       </div>
@@ -4103,8 +4103,8 @@ const renderCharacters = () => {
                       {previewChatBg !== null && (
                         <div className={`p-3 rounded-xl border ${isDarkMode ? 'bg-white/5 border-white/10 text-white' : 'bg-neutral-50 border-neutral-200 text-black'} space-y-3`}>
                           <div className="flex justify-between items-center">
-                            <p className="text-[10px] font-bold opacity-50 uppercase tracking-widest">背景預覽</p>
-                            <button onClick={() => setPreviewChatBg(null)} className="text-[10px] hover:text-red-500 transition-colors">清除預覽</button>
+                            <p className="text-[10px] font-bold opacity-50 uppercase tracking-widest">背景预览</p>
+                            <button onClick={() => setPreviewChatBg(null)} className="text-[10px] hover:text-red-500 transition-colors">清除预览</button>
                           </div>
                           <div className="w-full aspect-video rounded-lg overflow-hidden border border-white/10 bg-black/20">
                             <img src={previewChatBg} alt="Preview" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
@@ -4127,7 +4127,7 @@ const renderCharacters = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-xs font-medium">我的氣泡 CSS 代碼</label>
+                      <label className="text-xs font-medium">我的气泡 CSS 代码</label>
                       <textarea 
                         className={`w-full ${isDarkMode ? 'bg-black/20 border-white/10 text-white' : 'bg-neutral-50 border-neutral-200 text-black'} border rounded-lg px-3 py-2 text-[10px] font-mono h-20 outline-none`}
                         placeholder="例如: background: linear-gradient(45deg, #76DE84, #5856D6); border-radius: 20px 20px 0 20px;"
@@ -4137,7 +4137,7 @@ const renderCharacters = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-xs font-medium">對方的氣泡 CSS 代碼</label>
+                      <label className="text-xs font-medium">对方的气泡 CSS 代码</label>
                       <textarea 
                         className={`w-full ${isDarkMode ? 'bg-black/20 border-white/10 text-white' : 'bg-neutral-50 border-neutral-200 text-black'} border rounded-lg px-3 py-2 text-[10px] font-mono h-20 outline-none`}
                         placeholder="例如: background: white; color: black; border: 2px solid #EEE;"
@@ -4147,7 +4147,7 @@ const renderCharacters = () => {
                     </div>
 
                     <div className="space-y-3 pt-2">
-                      <p className="text-[10px] font-bold opacity-30 text-center uppercase tracking-widest">— 氣泡樣式預設 —</p>
+                      <p className="text-[10px] font-bold opacity-30 text-center uppercase tracking-widest">— 气泡样式预设 —</p>
                       <div className="grid grid-cols-2 gap-2">
                         {BUBBLE_PRESETS.map((p, idx) => (
                           <div key={idx} className={`${isDarkMode ? 'bg-white/5' : 'bg-neutral-100'} p-2 rounded-xl flex flex-col gap-2`}>
@@ -4177,7 +4177,7 @@ const renderCharacters = () => {
                   onClick={() => { setIsChatConfigOpen(false); setPreviewChatBg(null); }}
                   className="w-full py-4 bg-[#76DE84] text-white rounded-2xl font-bold shadow-lg shadow-[#76DE84]/20 active:scale-95 transition-transform"
                 >
-                  確認修改
+                  确认修改
                 </button>
               </div>
             </div>
@@ -4192,15 +4192,15 @@ const renderCharacters = () => {
 
         // Dynamic status logic
         const getStatus = () => {
-          if (isSystem) return "在線";
-          const statuses = ["在線", "忙碌", "吃飯中", "睡覺中", "玩遊戲中", "發呆中"];
+          if (isSystem) return "在线";
+          const statuses = ["在线", "忙碌", "吃饭中", "睡觉中", "玩游戏中", "发呆中"];
           return statuses[Math.floor((Date.now() / 3600000 + parseInt(char!.id.slice(-2))) % statuses.length)];
         };
         const status = getStatus();
 
         const getLocation = () => {
           if (isSystem) return "";
-          const locString = char?.location || '未知地點';
+          const locString = char?.location || '未知地点';
           const interval = (char?.locationInterval || 1) * 3600000; // hours to ms
           const locs = locString.split(/[，,、\s]+/).filter(l => l.trim().length > 0);
           if (locs.length <= 1) return locString;
@@ -4230,7 +4230,7 @@ const renderCharacters = () => {
                     {!isSystem && (
                       <div className="flex flex-col">
                         <span className="text-[9px] opacity-50 flex items-center gap-1">
-                          <span className={`w-1.5 h-1.5 rounded-full ${status === '在線' ? 'bg-green-500' : 'bg-orange-500'}`} />
+                          <span className={`w-1.5 h-1.5 rounded-full ${status === '在线' ? 'bg-green-500' : 'bg-orange-500'}`} />
                           {status}
                         </span>
                         <span className="text-[9px] opacity-40">{location}</span>
@@ -4284,7 +4284,7 @@ const renderCharacters = () => {
                       onClick={() => setSystemAlert(null)}
                       className="w-full py-3 bg-[#76DE84] text-white rounded-xl font-bold active:scale-95 transition-transform"
                     >
-                      確定
+                      确定
                     </button>
                   </motion.div>
                 </motion.div>
@@ -4307,17 +4307,17 @@ const renderCharacters = () => {
                         <div className="text-center mb-4">
                           <h3 className="text-xl font-bold flex items-center justify-center gap-2">
                             <Heart className="text-[#FF2D55] fill-[#FF2D55]" size={20} />
-                            贈送物品
+                            赠送物品
                           </h3>
-                          <p className="text-xs opacity-50 mt-1">從倉庫中選擇要贈送給 {chatName} 的魚貨或作物</p>
+                          <p className="text-xs opacity-50 mt-1">从仓库中选择要赠送给 {chatName} 的鱼货或作物</p>
                         </div>
 
                         <div className="flex-1 overflow-y-auto space-y-3 pr-1">
                           {warehouseItems.filter(i => (i.id.startsWith('f') || i.id.startsWith('c')) && i.amount > 0).length === 0 ? (
                             <div className="py-10 text-center opacity-30">
                               <ShoppingBag className="mx-auto mb-2" size={40} />
-                              <p className="text-sm font-bold">目前倉庫沒有魚或作物</p>
-                              <p className="text-[10px]">去釣魚或種田獲取後再來吧！</p>
+                              <p className="text-sm font-bold">目前仓库沒有鱼或作物</p>
+                              <p className="text-[10px]">去钓鱼或种田获取后再來吧！</p>
                             </div>
                           ) : (
                             warehouseItems.filter(i => (i.id.startsWith('f') || i.id.startsWith('c')) && i.amount > 0).map(item => {
@@ -4338,10 +4338,10 @@ const renderCharacters = () => {
                                     <span className="text-3xl group-hover:scale-110 transition-transform">{info.icon}</span>
                                     <div className="text-left">
                                       <div className="font-bold text-sm">{info.name}</div>
-                                      <div className="text-[10px] opacity-40">擁有數量: {item.amount}</div>
+                                      <div className="text-[10px] opacity-40">拥有数量: {item.amount}</div>
                                     </div>
                                   </div>
-                                  <div className="text-[#FF2D55] font-black text-xs">選擇</div>
+                                  <div className="text-[#FF2D55] font-black text-xs">选择</div>
                                 </button>
                               );
                             })
@@ -4361,15 +4361,15 @@ const renderCharacters = () => {
                     ) : (
                       <div className="flex flex-col items-center py-4">
                         <div className="text-6xl mb-4 animate-bounce">{giftConfirmItem.icon}</div>
-                        <h3 className="text-xl font-bold mb-2">確定要贈送 {giftConfirmItem.name} 嗎？</h3>
-                        <p className="text-sm opacity-50 text-center mb-8">贈送後將從倉庫扣除 1 個此物品，並增加與 {chatName} 的好感度。</p>
+                        <h3 className="text-xl font-bold mb-2">确定要赠送 {giftConfirmItem.name} 嗎？</h3>
+                        <p className="text-sm opacity-50 text-center mb-8">赠送后将从仓库扣除 1 个此物品，並增加与 {chatName} 的好感度。</p>
                         
                         <div className="flex w-full gap-3">
                           <button 
                             onClick={() => setGiftConfirmItem(null)}
                             className={`flex-1 py-3 rounded-xl font-bold ${isDarkMode ? 'bg-white/5 text-white' : 'bg-neutral-100 text-black'} active:scale-95 transition-transform`}
                           >
-                            選別的
+                            选别的
                           </button>
                           <button 
                             onClick={() => {
@@ -4383,8 +4383,8 @@ const renderCharacters = () => {
                                 if (giftConfirmItem.originalId.startsWith('f')) {
                                   const fish = giftConfirmItem as Fish;
                                   if (fish.rarity === '稀有') favorGain = 10;
-                                  else if (fish.rarity === '史詩') favorGain = 25;
-                                  else if (fish.rarity === '傳說') favorGain = 50;
+                                  else if (fish.rarity === '史诗') favorGain = 25;
+                                  else if (fish.rarity === '传说') favorGain = 50;
                                 } else {
                                   const crop = giftConfirmItem as Crop;
                                   favorGain = Math.ceil(crop.sellPrice / 20);
@@ -4393,7 +4393,7 @@ const renderCharacters = () => {
                                 setCharacters(prev => prev.map(c => c.id === char!.id ? { 
                                   ...c, 
                                   favorability: (c.favorability || 0) + favorGain,
-                                  messages: [...c.messages, { role: 'user', text: `[贈送] ${giftConfirmItem.icon} ${giftConfirmItem.name}` }]
+                                  messages: [...c.messages, { role: 'user', text: `[赠送] ${giftConfirmItem.icon} ${giftConfirmItem.name}` }]
                                 } : c));
                               }
                               setGiftConfirmItem(null);
@@ -4401,7 +4401,7 @@ const renderCharacters = () => {
                             }}
                             className="flex-1 py-3 bg-[#FF2D55] text-white rounded-xl font-bold shadow-lg shadow-[#FF2D55]/20 active:scale-95 transition-transform"
                           >
-                            確定贈送
+                            确定赠送
                           </button>
                         </div>
                       </div>
@@ -4426,12 +4426,12 @@ const renderCharacters = () => {
                       <div className="w-16 h-16 bg-[#FF9500] rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg shadow-[#FF9500]/20">
                         <WalletIcon size={32} className="text-white" />
                       </div>
-                      <h3 className="text-xl font-bold">轉帳給 {chatName}</h3>
-                      <p className="text-sm opacity-50 mt-1">錢包餘額：${walletBalance}</p>
+                      <h3 className="text-xl font-bold">转账给 {chatName}</h3>
+                      <p className="text-sm opacity-50 mt-1">钱包余额：${walletBalance}</p>
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-xs font-bold opacity-40 uppercase px-1">輸入金額</label>
+                      <label className="text-xs font-bold opacity-40 uppercase px-1">输入金额</label>
                       <input 
                         type="number"
                         placeholder="0"
@@ -4453,14 +4453,14 @@ const renderCharacters = () => {
                         onClick={() => {
                           const amount = parseInt(transferAmount);
                           setWalletBalance(prev => prev - amount);
-                          addTransaction('transfer', amount, `轉帳給 ${chatName}`, chatName);
+                          addTransaction('transfer', amount, `转账给 ${chatName}`, chatName);
                           setCharacters(prev => prev.map(c => {
                             if (c.id === char!.id) {
                               const charTx: Transaction = {
                                 id: Date.now().toString() + 'c' + Math.random().toString(36).substr(2, 5),
                                 type: 'income',
                                 amount: amount,
-                                title: `收到來自 ${userProfile.name} 的轉帳`,
+                                title: `收到来自 ${userProfile.name} 的转账`,
                                 timestamp: new Date().toLocaleString('zh-TW', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
                               };
                               return { 
@@ -4474,7 +4474,7 @@ const renderCharacters = () => {
                           }));
                           
                           // Add a fake system message about transfer
-                          const transferMsg: Message = { role: 'user', text: `[系統通知] 成功轉帳 $${amount} 給 ${chatName}` };
+                          const transferMsg: Message = { role: 'user', text: `[系统通知] 成功转账 $${amount} 给 ${chatName}` };
                           setCharacters(prev => prev.map(c => c.id === char!.id ? { ...c, messages: [...c.messages, transferMsg] } : c));
                           
                           setIsTransferModalOpen(false);
@@ -4482,7 +4482,7 @@ const renderCharacters = () => {
                         }}
                         className={`py-3 rounded-xl font-bold bg-[#FF9500] text-white shadow-lg shadow-[#FF9500]/20 active:scale-95 transition-transform disabled:opacity-20 disabled:cursor-not-allowed`}
                       >
-                        確認轉帳
+                        确认转账
                       </button>
                     </div>
                   </motion.div>
@@ -4497,14 +4497,14 @@ const renderCharacters = () => {
               {char?.chatBackground && <div className="absolute inset-0 bg-black/10 backdrop-blur-[2px] pointer-events-none" />}
               <div className="relative z-1">
                 {chatMessages.length === 0 && (
-                  <div className={`text-center py-10 opacity-40 text-sm ${char?.chatBackground ? 'text-white' : ''}`}>與 {chatName} 開始對話吧！</div>
+                  <div className={`text-center py-10 opacity-40 text-sm ${char?.chatBackground ? 'text-white' : ''}`}>与 {chatName} 开始对话吧！</div>
                 )}
                 <div className="space-y-4">
                   {chatMessages.map((m, i) => {
-                    const isSticker = m.text.startsWith('[貼圖] ');
-                    const stickerUrl = isSticker ? m.text.replace('[貼圖] ', '') : null;
-                    const isGift = m.text.includes('[贈禮]');
-                    const isTransfer = m.text.includes('[轉帳]');
+                    const isSticker = m.text.startsWith('[贴图] ');
+                    const stickerUrl = isSticker ? m.text.replace('[贴图] ', '') : null;
+                    const isGift = m.text.includes('[赠礼]');
+                    const isTransfer = m.text.includes('[转账]');
                     const hasReply = m.replyTo;
                     
                     // Custom CSS logic
@@ -4534,7 +4534,7 @@ const renderCharacters = () => {
                         {hasReply && (
                           <div className={`text-[10px] opacity-40 mb-1 flex items-center gap-1 ${m.role === 'user' ? 'mr-2' : 'ml-2'}`}>
                             <Reply size={10} className="rotate-180" />
-                            <span className="truncate max-w-[150px]">回覆: {m.replyTo}</span>
+                            <span className="truncate max-w-[150px]">回复: {m.replyTo}</span>
                           </div>
                         )}
                         <div className={`flex group items-center gap-2 ${m.role === 'user' ? 'flex-row-reverse' : 'flex-row'} cursor-pointer`} onClick={() => setReplyingTo(m)}>
@@ -4546,8 +4546,8 @@ const renderCharacters = () => {
                             <div 
                               style={customStyle}
                               onClick={(e) => {
-                                if (isGift) { e.stopPropagation(); setSystemAlert('收下禮物'); }
-                                else if (isTransfer) { e.stopPropagation(); setSystemAlert('收下轉帳'); }
+                                if (isGift) { e.stopPropagation(); setSystemAlert('收下礼物'); }
+                                else if (isTransfer) { e.stopPropagation(); setSystemAlert('收下转账'); }
                               }}
                               className={`max-w-[80%] px-4 py-2 rounded-[20px] text-[15px] shadow-sm relative ${Object.entries(customStyle).length > 0 ? '' : (m.role === 'user' ? 'bg-[#76DE84] text-white rounded-tr-none' : (isDarkMode ? 'bg-[#1c1c1e] text-white border border-[#38383a] rounded-tl-none' : 'bg-neutral-100 text-black rounded-tl-none'))} ${(isGift || isTransfer) ? 'ring-2 ring-amber-400 cursor-pointer active:scale-95 transition-transform' : ''}`}
                             >
@@ -4557,7 +4557,7 @@ const renderCharacters = () => {
                           <button 
                             onClick={(e) => { e.stopPropagation(); setReplyingTo(m); }}
                             className={`opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-full ${isDarkMode ? 'hover:bg-white/5 text-neutral-400' : 'hover:bg-black/5 text-neutral-500'}`}
-                            title="回覆"
+                            title="回复"
                           >
                             <Reply size={14} />
                           </button>
@@ -4567,7 +4567,7 @@ const renderCharacters = () => {
                   })}
                 </div>
               </div>
-              {typingChatId === selectedChatId && <div className="text-[10px] text-neutral-400 ml-2 animate-pulse mb-4">{chatName} 正在輸入...</div>}
+              {typingChatId === selectedChatId && <div className="text-[10px] text-neutral-400 ml-2 animate-pulse mb-4">{chatName} 正在输入...</div>}
               <div ref={chatEndRef} />
             </div>
 
@@ -4585,7 +4585,7 @@ const renderCharacters = () => {
                       onClick={() => setEmojiPickerTab('stickers')}
                       className={`text-xs font-bold uppercase tracking-widest transition-opacity ${emojiPickerTab === 'stickers' ? 'opacity-100 underline decoration-2 underline-offset-4 decoration-[#76DE84]' : 'opacity-30 hover:opacity-50'}`}
                     >
-                      表情與貼圖
+                      表情与贴图
                     </button>
                     <button 
                       onClick={() => setEmojiPickerTab('nudge')}
@@ -4597,7 +4597,7 @@ const renderCharacters = () => {
                       onClick={() => setEmojiPickerTab('memo')}
                       className={`text-xs font-bold uppercase tracking-widest transition-opacity ${emojiPickerTab === 'memo' ? 'opacity-100 underline decoration-2 underline-offset-4 decoration-[#76DE84]' : 'opacity-30 hover:opacity-50'}`}
                     >
-                      備忘錄
+                      备忘录
                     </button>
                     <div className="flex-1" />
                     {emojiPickerTab === 'stickers' && (
@@ -4605,7 +4605,7 @@ const renderCharacters = () => {
                         onClick={() => stickerInputRef.current?.click()}
                         className="text-[10px] bg-[#76DE84]/10 text-[#76DE84] px-2 py-1 rounded-full font-bold active:scale-90 transition-transform"
                       >
-                        + 新增貼圖
+                        + 新增贴图
                       </button>
                     )}
                     <input 
@@ -4620,9 +4620,9 @@ const renderCharacters = () => {
                   <div className="flex-1 overflow-y-auto min-h-[200px]">
                     {emojiPickerTab === 'stickers' ? (
                       <div>
-                        <p className="text-[10px] font-bold opacity-30 mb-2">我的貼圖</p>
+                        <p className="text-[10px] font-bold opacity-30 mb-2">我的贴图</p>
                         {stickers.length === 0 ? (
-                          <div className="text-center py-8 opacity-30 text-xs">尚無貼圖，點擊上方按鈕新增</div>
+                          <div className="text-center py-8 opacity-30 text-xs">尚无贴图，点击上方按钮新增</div>
                         ) : (
                           <div className="grid grid-cols-4 gap-2">
                             {stickers.map((s, idx) => (
@@ -4631,11 +4631,11 @@ const renderCharacters = () => {
                                 onClick={() => {
                                   if (isSystem) {
                                     setInput("");
-                                    const stickerMsg: Message = { role: 'user', text: `[貼圖] ${s}` };
+                                    const stickerMsg: Message = { role: 'user', text: `[贴图] ${s}` };
                                     setMessages(prev => [...prev, stickerMsg]);
                                   } else {
                                     setInput("");
-                                    const stickerMsg: Message = { role: 'user', text: `[貼圖] ${s}` };
+                                    const stickerMsg: Message = { role: 'user', text: `[贴图] ${s}` };
                                     setCharacters(prev => prev.map(c => c.id === char!.id ? { ...c, messages: [...c.messages, stickerMsg] } : c));
                                   }
                                   setIsEmojiPickerOpen(false);
@@ -4651,7 +4651,7 @@ const renderCharacters = () => {
                     ) : emojiPickerTab === 'nudge' ? (
                       <div className="flex flex-col gap-4 py-4">
                         <div className="text-center space-y-2">
-                          <p className="text-sm font-medium opacity-70">你想拍拍 {chatName} 的哪裡？</p>
+                          <p className="text-sm font-medium opacity-70">你想拍拍 {chatName} 的哪里？</p>
                           <div className={`p-4 rounded-2xl ${isDarkMode ? 'bg-black/40' : 'bg-neutral-50'} border border-neutral-100/10`}>
                             <div className="flex items-center gap-2">
                               <span className="text-xs opacity-40 shrink-0">拍一拍他的...</span>
@@ -4659,7 +4659,7 @@ const renderCharacters = () => {
                                 type="text"
                                 value={nudgeInput}
                                 onChange={(e) => setNudgeInput(e.target.value)}
-                                placeholder="頭、肩膀、肚子..."
+                                placeholder="头、肩膀、肚子..."
                                 className="flex-1 bg-transparent border-none outline-none text-sm font-bold"
                                 onKeyDown={(e) => e.key === 'Enter' && sendNudge(char!)}
                               />
@@ -4671,10 +4671,10 @@ const renderCharacters = () => {
                           disabled={isSystem}
                           className="w-full py-3 bg-[#76DE84] text-white rounded-xl font-bold active:scale-95 transition-transform disabled:opacity-20 shadow-lg shadow-[#76DE84]/20"
                         >
-                          發送拍一拍
+                          发送拍一拍
                         </button>
                         <div className="text-[10px] text-center opacity-30 px-6">
-                        就像微信的拍一拍功能一樣，讓對方知道你在找他。
+                        就像微信的拍一拍功能一样，让对方知道你在找他。
                         </div>
                       </div>
                     ) : (
@@ -4682,7 +4682,7 @@ const renderCharacters = () => {
                         <div className="flex items-center gap-2">
                           <input 
                             className={`flex-1 ${isDarkMode ? 'bg-black/40 text-white' : 'bg-neutral-50 text-black'} border-none outline-none px-4 py-3 rounded-xl text-sm font-medium`}
-                            placeholder="新增備忘錄..."
+                            placeholder="新增备忘录..."
                             value={memoInput}
                             onChange={(e) => setMemoInput(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && addMemo(selectedChatId!)}
@@ -4696,7 +4696,7 @@ const renderCharacters = () => {
                         </div>
                         <div className="flex-1 overflow-y-auto space-y-2 pb-10">
                           {(isSystem ? systemMemos : (char?.memos || [])).length === 0 ? (
-                            <div className="text-center py-10 opacity-30 text-xs">尚無備忘錄</div>
+                            <div className="text-center py-10 opacity-30 text-xs">尚无备忘录</div>
                           ) : (
                             (isSystem ? systemMemos : (char?.memos || [])).map(m => (
                               <div key={m.id} className="relative overflow-hidden rounded-xl">
@@ -4887,7 +4887,7 @@ return (
 // --- 輔助小組件 (定義在 App 外面，確保只出現一次) ---
 const ProfileInput = ({ label, value, isDark, onChange }: any) => (
   <div className="px-5 py-3 flex items-center"><span className="w-20 text-sm font-medium">{label}</span>
-    <input className={`flex-1 text-sm outline-none bg-transparent ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`} value={value} onChange={e => onChange(e.target.value)} placeholder={`請輸入${label}`} /></div>
+    <input className={`flex-1 text-sm outline-none bg-transparent ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`} value={value} onChange={e => onChange(e.target.value)} placeholder={`请输入${label}`} /></div>
 );
 
 const WallpaperThumb = ({ label, src, onClick }: any) => (
