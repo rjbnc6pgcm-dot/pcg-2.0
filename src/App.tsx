@@ -5773,6 +5773,7 @@ if (settingsSubPage === 'ai-config' as any) return (
                     </div>
                   </div>
                 </div>
+              </div>
 
                 <button 
                   onClick={() => { setIsChatConfigOpen(false); setPreviewChatBg(null); }}
