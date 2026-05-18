@@ -5728,7 +5728,6 @@ if (settingsSubPage === 'ai-config' as any) return (
                           </div>
                         </div>
                       )}
-                    </div>
 
                     <div className="space-y-2">
                       <label className="text-xs font-medium">我的氣泡 CSS 代碼</label>
