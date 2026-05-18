@@ -5478,8 +5478,6 @@ if (settingsSubPage === 'ai-config' as any) return (
                     </div>
                   </div>
 
-                  <div className="space-y-4 pt-4 border-t border-neutral-100/10">
-                    <div className="flex justify-between items-center text-sm font-bold opacity-60 uppercase tracking-widest px-1">
                       <span>訊息連續傳送上限</span>
                       <MessageCircle size={14} />
                     </div>
@@ -5729,7 +5727,7 @@ if (settingsSubPage === 'ai-config' as any) return (
                         </div>
                       )}
 
-                    <div className="space-y-2">
+                    <className="space-y-2">
                       <label className="text-xs font-medium">我的氣泡 CSS 代碼</label>
                       <textarea 
                         className={`w-full ${isDarkMode ? 'bg-black/20 border-white/10 text-white' : 'bg-neutral-50 border-neutral-200 text-black'} border rounded-lg px-3 py-2 text-[10px] font-mono h-20 outline-none`}
