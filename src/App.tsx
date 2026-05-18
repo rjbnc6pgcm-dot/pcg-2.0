@@ -314,12 +314,9 @@ const LOCALES = {
   [Language.EN]: 'en-US',
   [Language.JA]: 'ja-JP',
 };
-type AppId = 'messages' | 'settings' | 'store' | 'kitchen' | 'wallet' | 'garden' | 'photos' | 'characters' | 'warehouse' | 'fishing' | 'wheel' | 'dex' | 'moments' | 'game';
+type AppId = 'messages' | 'settings' | 'store' | 'kitchen' | 'wallet' | 'garden' | 'photos' | 'characters' | 'warehouse' | 'fishing' | 'wheel' | 'dex' | 'game';
 
 interface Message { role: 'user' | 'model'; text: string; id?: string; replyTo?: string; }
-interface MomentGroup { id: string; name: string; characterIds: string[]; coverImage?: string; }
-interface MomentComment { id: string; authorId: string; text: string; timestamp: number; }
-interface MomentPost { id: string; groupId: string; authorId: string; text: string; imageUrl?: string; timestamp: number; likes: string[]; comments: MomentComment[]; }
 interface ReceivedGift { id: string; giftId: string; senderId: string; senderName: string; timestamp: number; }
 interface Memo { id: string; text: string; completed: boolean; }
 interface UserProfile { name: string; age: string; gender: string; avatar: string; signature: string; walletBalance?: number; }
@@ -1725,392 +1722,6 @@ const WarehouseApp = ({ warehouseItems, receivedGifts, isDarkMode, goHome, onSel
   );
 };
 
-
-const MomentsApp = ({
-  momentGroups, setMomentGroups,
-  momentPosts, setMomentPosts,
-  characters, userProfile, isDarkMode, goHome
-}: any) => {
-  const [activeGroupId, setActiveGroupId] = useState(momentGroups.length > 0 ? momentGroups[0].id : 'group1');
-  const [isGroupDropdownOpen, setIsGroupDropdownOpen] = useState(false);
-  const [isEditingGroups, setIsEditingGroups] = useState(false);
-  const [newPostText, setNewPostText] = useState('');
-  const [newPostImage, setNewPostImage] = useState<string | null>(null);
-  const [commentingOn, setCommentingOn] = useState<string | null>(null);
-  const [commentText, setCommentText] = useState('');
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const momentGroupCoverInputRef = useRef<HTMLInputElement>(null);
-
-  const activeGroup = momentGroups.find((g: any) => g.id === activeGroupId) || momentGroups[0];
-  const groupPosts = momentPosts.filter((p: any) => p.groupId === activeGroupId).sort((a: any, b: any) => b.timestamp - a.timestamp);
-
-  const handleGroupCoverUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (event.target && typeof event.target.result === 'string') {
-          const newCover = event.target.result;
-          setMomentGroups((prev: any) => prev.map((g: any) => g.id === activeGroupId ? { ...g, coverImage: newCover } : g));
-        }
-      };
-      reader.readAsDataURL(e.target.files[0]);
-    }
-  };
-
-  const getAuthorInfo = (id: string) => {
-    if (id === 'user') return { name: userProfile.name, avatar: userProfile.avatar, isUser: true };
-    const char = characters.find((c: any) => c.id === id);
-    if (char) return { name: char.name, avatar: char.avatar, isUser: false };
-    return { name: '未知', avatar: '❓', isUser: false };
-  };
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (event.target && typeof event.target.result === 'string') {
-          setNewPostImage(event.target.result);
-        }
-      };
-      reader.readAsDataURL(e.target.files[0]);
-    }
-  };
-
-  const handlePost = () => {
-    if (!newPostText.trim() && !newPostImage) return;
-    const newPost: MomentPost = {
-      id: Date.now().toString(),
-      groupId: activeGroupId,
-      authorId: 'user',
-      text: newPostText,
-      imageUrl: newPostImage || undefined,
-      timestamp: Date.now(),
-      likes: [],
-      comments: []
-    };
-    setMomentPosts((prev: any) => [newPost, ...prev]);
-    setNewPostText('');
-    setNewPostImage(null);
-  };
-
-  const handleLike = (postId: string) => {
-    setMomentPosts((prev: any) => prev.map((p: any) => {
-      if (p.id === postId) {
-        const hasLiked = p.likes.includes('user');
-        return {
-          ...p,
-          likes: hasLiked ? p.likes.filter((id: any) => id !== 'user') : [...p.likes, 'user']
-        };
-      }
-      return p;
-    }));
-  };
-
-  const handleComment = (postId: string) => {
-    if (!commentText.trim()) return;
-    setMomentPosts((prev: any) => prev.map((p: any) => {
-      if (p.id === postId) {
-        return {
-          ...p,
-          comments: [...p.comments, {
-            id: Date.now().toString(),
-            authorId: 'user',
-            text: commentText,
-            timestamp: Date.now()
-          }]
-        };
-      }
-      return p;
-    }));
-    setCommentingOn(null);
-    setCommentText('');
-  };
-
-  const toggleCharacterInGroup = (charId: string) => {
-    setMomentGroups((prev: any) => prev.map((g: any) => {
-      if (g.id === activeGroupId) {
-        const hasChar = g.characterIds.includes(charId);
-        return {
-          ...g,
-          characterIds: hasChar ? g.characterIds.filter((id: any) => id !== charId) : [...g.characterIds, charId]
-        };
-      }
-      return g;
-    }));
-  };
-
-  if (isEditingGroups) {
-    return (
-      <div className={`flex-1 flex flex-col h-full ${isDarkMode ? 'bg-black text-white' : 'bg-neutral-50 text-black'}`}>
-        <div className={`px-4 pt-16 pb-4 flex items-center justify-between border-b ${isDarkMode ? 'border-[#38383a]' : 'border-neutral-200'}`}>
-          <button onClick={() => setIsEditingGroups(false)} className="text-[#76DE84] font-medium flex items-center"><ChevronLeft size={20} /> 返回</button>
-          <h2 className="font-bold text-lg">設定 {activeGroup.name}</h2>
-          <div className="w-10"></div>
-        </div>
-        <div className="flex-1 overflow-y-auto p-4 space-y-6">
-          <div className="space-y-4">
-             <div className="flex items-center justify-between px-2">
-               <label className="text-xs font-black uppercase tracking-wider opacity-40">封面圖片</label>
-               <button 
-                 onClick={() => momentGroupCoverInputRef.current?.click()}
-                 className="text-[10px] font-bold bg-[#76DE84] text-white px-3 py-1 rounded-full shadow-sm active:scale-95 transition-transform"
-               >
-                 更換封面
-               </button>
-               <input 
-                 type="file"
-                 accept="image/*"
-                 ref={momentGroupCoverInputRef}
-                 className="hidden"
-                 onChange={handleGroupCoverUpload}
-               />
-             </div>
-             <div className={`w-full aspect-video rounded-3xl overflow-hidden border-2 ${isDarkMode ? 'border-white/10' : 'border-black/5'} shadow-inner relative group`}>
-               <img 
-                 src={activeGroup.coverImage || userProfile.avatar} 
-                 className="w-full h-full object-cover" 
-                 alt="Cover preview"
-               />
-               <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-                 <Camera className="text-white" size={32} />
-               </div>
-             </div>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-xs font-bold opacity-50 pl-2">朋友圈名稱</label>
-            <input 
-              className={`w-full px-4 py-3 rounded-xl outline-none ${isDarkMode ? 'bg-[#1c1c1e] text-white' : 'bg-white text-black'} shadow-sm`}
-              value={activeGroup.name}
-              onChange={e => setMomentGroups((prev: any) => prev.map((g: any) => g.id === activeGroupId ? { ...g, name: e.target.value } : g))}
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-xs font-bold opacity-50 pl-2">允許加入的角色</label>
-            <div className={`rounded-xl overflow-hidden ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white'} shadow-sm divide-y ${isDarkMode ? 'divide-[#38383a]' : 'divide-neutral-100'}`}>
-              {characters.map((char: any) => {
-                const isSelected = activeGroup.characterIds.includes(char.id);
-                return (
-                  <div key={char.id} className="p-3 flex items-center justify-between" onClick={() => toggleCharacterInGroup(char.id)}>
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full overflow-hidden bg-neutral-200">
-                        <AvatarImage src={char.avatar} className="w-full h-full object-cover" />
-                      </div>
-                      <span className="font-medium">{char.name}</span>
-                    </div>
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center border ${isSelected ? 'bg-[#76DE84] border-[#76DE84]' : 'border-neutral-300'}`}>
-                      {isSelected && <Check size={14} className="text-white" strokeWidth={3} />}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className={`flex-1 flex flex-col h-full bg-neutral-100 ${isDarkMode ? 'bg-black text-white' : 'bg-neutral-100 text-black'}`}>
-      <div className={`relative px-4 pt-16 pb-4 flex items-center justify-between z-20 ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white'}`}>
-        <button onClick={goHome} className="text-[#76DE84] font-medium z-10 w-16">主畫面</button>
-        <div className="flex-1 flex justify-center relative">
-          <button 
-            onClick={() => setIsGroupDropdownOpen(!isGroupDropdownOpen)}
-            className="font-bold text-lg flex items-center gap-1 active:opacity-70 transition-opacity"
-          >
-            {activeGroup?.name || '朋友圈'} 
-            {isGroupDropdownOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-          </button>
-          
-          {isGroupDropdownOpen && (
-            <div className={`absolute top-full mt-2 w-48 rounded-xl shadow-xl border overflow-hidden ${isDarkMode ? 'bg-[#1c1c1e] border-white/10' : 'bg-white border-black/10'} origin-top animate-in fade-in zoom-in-95 duration-100`}>
-              {momentGroups.map((g: any) => (
-                 <button
-                   key={g.id}
-                   onClick={() => { setActiveGroupId(g.id); setIsGroupDropdownOpen(false); }}
-                   className={`w-full text-left px-4 py-3 text-sm flex items-center justify-between ${activeGroupId === g.id ? 'text-[#76DE84] font-bold' : ''} ${isDarkMode ? 'hover:bg-white/5' : 'hover:bg-black/5'} transition-colors`}
-                 >
-                   {g.name}
-                   {activeGroupId === g.id && <Check size={16} />}
-                 </button>
-              ))}
-              <div className={`border-t ${isDarkMode ? 'border-white/10' : 'border-black/10'}`}>
-                <button
-                  onClick={() => setIsEditingGroups(true)}
-                  className={`w-full text-left px-4 py-3 text-sm flex items-center gap-2 ${isDarkMode ? 'hover:bg-white/5' : 'hover:bg-black/5'} transition-colors`}
-                >
-                  <SettingsIcon size={16} /> 朋友圈設定
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-        <div className="w-16 flex justify-end">
-          <button className="opacity-0 cursor-default"><Plus size={24} /></button>
-        </div>
-      </div>
-      
-      <div className="flex-1 overflow-y-auto w-full relative z-0">
-        {/* Cover Photo */}
-        <div className={`w-full aspect-square md:aspect-[4/3] relative ${isDarkMode ? 'bg-neutral-900' : 'bg-neutral-300'}`}>
-          <img 
-            src={activeGroup.coverImage || userProfile.avatar} 
-            alt="cover" 
-            className="w-full h-full object-cover filter blur-[1px] brightness-90 transition-all duration-500" 
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/20"></div>
-          <div className="absolute right-4 -bottom-10 flex items-end gap-3 z-10 w-full justify-end">
-            <span className="font-bold text-lg text-white drop-shadow-md pb-2">{userProfile.name}</span>
-            <div className="w-20 h-20 rounded-2xl bg-white p-0.5 shadow-lg">
-              <AvatarImage src={userProfile.avatar} className="w-full h-full object-cover rounded-xl" />
-            </div>
-          </div>
-        </div>
-
-        {/* Input Area */}
-        <div className={`mt-14 mx-4 mb-4 p-4 rounded-2xl ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white'} shadow-sm flex flex-col gap-3 group`}>
-          <div className="flex gap-3 items-center">
-            <div className="w-10 h-10 rounded-full overflow-hidden bg-neutral-200 shrink-0">
-               <AvatarImage src={userProfile.avatar} className="w-full h-full object-cover" />
-            </div>
-             <input 
-                type="text"
-                placeholder="分享新鮮事..."
-                className="flex-1 outline-none text-sm bg-transparent"
-                value={newPostText}
-                onChange={e => setNewPostText(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handlePost()}
-             />
-             <button 
-               onClick={() => fileInputRef.current?.click()}
-               className="p-2 rounded-full hover:bg-black/5 text-[#576b95] transition-colors"
-             >
-               <Camera size={20} />
-             </button>
-             <input 
-               type="file" 
-               accept="image/*"
-               ref={fileInputRef}
-               className="hidden"
-               onChange={handleImageUpload}
-             />
-             <button 
-               onClick={handlePost}
-               disabled={!newPostText.trim() && !newPostImage}
-               className={`px-4 py-1.5 rounded-full text-sm font-bold transition-colors ${(newPostText.trim() || newPostImage) ? 'bg-[#76DE84] text-white hover:bg-[#60ce6e]' : 'bg-neutral-200 text-neutral-400'}`}
-             >
-               發布
-             </button>
-          </div>
-          {newPostImage && (
-            <div className="relative w-24 h-24 rounded-xl overflow-hidden ml-13">
-              <img src={newPostImage} alt="Preview" className="w-full h-full object-cover" />
-              <button 
-                onClick={() => setNewPostImage(null)}
-                className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-1"
-              >
-                <Plus className="rotate-45" size={14} />
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Posts Feed */}
-        <div className="divide-y pb-20">
-          {groupPosts.map((post: any) => {
-            const author = getAuthorInfo(post.authorId);
-            const userLiked = post.likes.includes('user');
-            return (
-              <div key={post.id} className="p-4 flex gap-3">
-                 <div className="w-12 h-12 rounded-xl overflow-hidden bg-neutral-200 shrink-0">
-                   <AvatarImage src={author.avatar} className="w-full h-full object-cover" />
-                 </div>
-                 <div className="flex-1 min-w-0">
-                    <h4 className="font-bold text-[#576b95] text-[15px]">{author.name}</h4>
-                    <p className="text-[15px] leading-relaxed mt-1 break-words whitespace-pre-wrap">{post.text}</p>
-                    {post.imageUrl && (
-                      <div className="mt-2 max-w-[200px] max-h-[200px] rounded-lg overflow-hidden">
-                        <img src={post.imageUrl} alt="Post image" className="w-full h-full object-cover" />
-                      </div>
-                    )}
-                    
-                    <div className="flex items-center justify-between mt-3 text-xs opacity-50 relative">
-                       <span>{new Date(post.timestamp).toLocaleString('zh-TW', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
-                       <div className="flex gap-4">
-                         <button onClick={() => handleLike(post.id)} className="flex items-center gap-1 hover:opacity-80">
-                           <motion.div whileTap={{ scale: 0.5 }} animate={userLiked ? { scale: [1, 1.2, 1] } : {}}>
-                             <Heart size={16} className={userLiked ? 'fill-[#FF2D55] text-[#FF2D55]' : ''} />
-                           </motion.div>
-                         </button>
-                         <button onClick={() => setCommentingOn(commentingOn === post.id ? null : post.id)} className="flex items-center gap-1 hover:opacity-80">
-                           <MessageCircle size={16} />
-                         </button>
-                       </div>
-                    </div>
-
-                    {/* Reactions & Comments Region */}
-                    {(post.likes.length > 0 || post.comments.length > 0) && (
-                      <div className={`mt-3 p-3 rounded-lg flex flex-col gap-2 ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-black/5'} text-[13px]`}>
-                        {/* Likes */}
-                        {post.likes.length > 0 && (
-                          <div className="flex items-start gap-2 border-b border-black/5 pb-2">
-                             <Heart size={12} className="shrink-0 mt-0.5 text-[#FF2D55] fill-[#FF2D55]" />
-                             <div className="flex flex-wrap gap-1 font-bold text-[#576b95]">
-                               {post.likes.map((l: string, i: number) => (
-                                 <span key={i}>{getAuthorInfo(l).name}{i < post.likes.length - 1 ? ', ' : ''}</span>
-                               ))}
-                             </div>
-                          </div>
-                        )}
-                        {/* Comments */}
-                        {post.comments.length > 0 && (
-                           <div className="flex flex-col gap-1.5 pt-1">
-                             {post.comments.map((comment: any) => (
-                               <div key={comment.id} className="leading-snug">
-                                 <span className="font-bold text-[#576b95] cursor-pointer">{getAuthorInfo(comment.authorId).name}</span>
-                                 <span className="mx-1">:</span>
-                                 <span className="break-words">{comment.text}</span>
-                               </div>
-                             ))}
-                           </div>
-                        )}
-                      </div>
-                    )}
-                    
-                    {/* Comment Input */}
-                    {commentingOn === post.id && (
-                      <div className="mt-3 flex gap-2">
-                        <input 
-                          autoFocus
-                          type="text"
-                          placeholder="評論..."
-                          className={`flex-1 text-sm rounded-lg px-3 py-2 outline-none ${isDarkMode ? 'bg-[#1c1c1e] text-white border border-[#38383a]' : 'bg-white text-black border border-neutral-200'} shadow-sm`}
-                          value={commentText}
-                          onChange={e => setCommentText(e.target.value)}
-                          onKeyDown={e => e.key === 'Enter' && handleComment(post.id)}
-                        />
-                        <button 
-                          onClick={() => handleComment(post.id)}
-                          disabled={!commentText.trim()}
-                          className={`px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm ${commentText.trim() ? 'bg-[#76DE84] text-white' : 'bg-neutral-200 text-neutral-400'}`}
-                        >
-                          發送
-                        </button>
-                      </div>
-                    )}
-                 </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
-};
-
 export default function App() {
   const [screenState, setScreenState] = useState<ScreenState>(ScreenState.Locked);
   const [activeApp, setActiveApp] = useState<AppId | null>(null);
@@ -3281,11 +2892,6 @@ const GardenApp = ({
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [letters, setLetters] = useState<Letter[]>([]);
   const [receivedGifts, setReceivedGifts] = useState<ReceivedGift[]>([]);
-  const [momentGroups, setMomentGroups] = useState<MomentGroup[]>([
-    { id: 'group1', name: '朋友圈1', characterIds: [] },
-    { id: 'group2', name: '朋友圈2', characterIds: [] }
-  ]);
-  const [momentPosts, setMomentPosts] = useState<MomentPost[]>([]);
   const [lastLetterCheck, setLastLetterCheck] = useState<number>(0);
   const [warehouseItems, setWarehouseItems] = useState<{id: string, amount: number}[]>([]);
   const [gardenPatches, setGardenPatches] = useState<GardenPatch[]>(
@@ -3451,7 +3057,7 @@ const GardenApp = ({
       });
     };
 
-    const giftInterval = setInterval(checkGifts, 60000);
+    const giftInterval = setInterval(checkGifts, 1200000);
     return () => clearInterval(giftInterval);
   }, [userProfile.name]);
 
@@ -3521,7 +3127,7 @@ const GardenApp = ({
       });
     };
 
-    const interval = setInterval(checkLetters, 60000); // Check every minute
+    const interval = setInterval(checkLetters, 1200000); // Check every minute
     return () => clearInterval(interval);
   }, [characters, userProfile.name, lastLetterCheck]);
 
@@ -3759,122 +3365,9 @@ const GardenApp = ({
   // Persistence state
   const [isLoaded, setIsLoaded] = useState(false);
 
-  useEffect(() => {
-    const doAutoMoments = async () => {
-      // Each minute there's roughly a 1% chance (about 50% per hour) that a character might post to a group they're in.
-      if (!isLoaded || characters.length === 0 || momentGroups.length === 0) return;
-      
-      for (const char of characters) {
-        // ~1% chance to act per minute
-        if (Math.random() < 0.015) {
-          const eligibleGroups = momentGroups.filter(g => g.characterIds.includes(char.id));
-          if (eligibleGroups.length > 0) {
-            // Pick a random group
-            const targetGroup = eligibleGroups[Math.floor(Math.random() * eligibleGroups.length)];
-            
-            try {
-              const systemPrompt = `你現在扮演一個角色：
-角色姓名：${char.name}
-性格設定：${char.personality}
-對話風格：${char.customPrompt || '無'}
-社交狀況：${char.socialStatus || '無'}
-任務：你在「${targetGroup.name}」朋友圈發布了一篇新文。請根據你的性格、風格和社交狀況，隨機發布一段短文分享你的生活、心情或吐槽。如果社交狀況中有特別在意的人或事，可以稍微提及。
-要求：
-1. 長度在1到3句話以內，就像真實的社交媒體貼文。
-2. 保持角色設定和對話風格。
-3. 不要包含任何開場白或解釋語，直接輸出貼文內容。`;
-
-              const gAI = new GoogleGenAI({ apiKey: aiSettings.apiKey || process.env.GEMINI_API_KEY || '' });
-              const result = await gAI.models.generateContent({
-                model: "gemini-flash-latest",
-                contents: [{ role: 'user', parts: [{ text: "請直接給出你的朋友圈貼文內容：" }] }],
-                config: { systemInstruction: systemPrompt }
-              });
-
-              if (result.text) {
-                const newPost: MomentPost = {
-                  id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
-                  groupId: targetGroup.id,
-                  authorId: char.id,
-                  text: result.text.trim(),
-                  timestamp: Date.now(),
-                  likes: [],
-                  comments: []
-                };
-                setMomentPosts(prev => [newPost, ...prev]);
-                
-                const logEntry = `發表了一篇朋友圈貼文`;
-                setCharacters(prev => prev.map(c => c.id === char.id ? { 
-                  ...c, 
-                  activityLogs: [logEntry, ...(c.activityLogs || [])].slice(0, 20)
-                } : c));
-              }
-            } catch (e) {
-              console.error("Auto moment post failed:", e);
-            }
-          }
-        } else if (Math.random() < 0.02) { // 2% chance per minute to randomly like/comment on a recent post
-           const eligibleGroups = momentGroups.filter(g => g.characterIds.includes(char.id));
-           const groupIds = eligibleGroups.map(g => g.id);
-           const eligiblePosts = momentPosts.filter(p => groupIds.includes(p.groupId) && p.authorId !== char.id);
-           
-           if (eligiblePosts.length > 0) {
-             const targetPost = eligiblePosts[Math.floor(Math.random() * Math.min(5, eligiblePosts.length))]; // Pick from recent 5
-             if (Math.random() < 0.5) {
-               // Like
-               if (!targetPost.likes.includes(char.id)) {
-                 setMomentPosts(prev => prev.map(p => p.id === targetPost.id ? { ...p, likes: [...p.likes, char.id] } : p));
-               }
-             } else {
-               // Comment
-               try {
-                  const targetAuthorName = targetPost.authorId === 'user' ? '使用者(你)' : (characters.find(c => c.id === targetPost.authorId)?.name || '未知使用者');
-                  const systemPrompt = `你現在扮演一個角色：
-角色姓名：${char.name}
-性格設定：${char.personality}
-對話風格：${char.customPrompt || '無'}
-社交狀況：${char.socialStatus || '無'}
-任務：你在朋友圈看到 ${targetAuthorName} 的貼文：「${targetPost.text}」。請根據你的性格、風格和社交狀況，發表一句簡短的評論。如果社交狀況中提到你與發文者的關係（例如交惡或交好），請在評論中表現出來。
-要求：
-1. 長度在1到2句話以內。
-2. 保持角色設定和對話風格。
-3. 不要包含任何開場白或解釋語，直接輸出評論內容。`;
-
-                  const gAI = new GoogleGenAI({ apiKey: aiSettings.apiKey || process.env.GEMINI_API_KEY || '' });
-                  const result = await gAI.models.generateContent({
-                    model: "gemini-flash-latest",
-                    contents: [{ role: 'user', parts: [{ text: "請直接給出你的評論內容：" }] }],
-                    config: { systemInstruction: systemPrompt }
-                  });
-
-                  if (result.text && result.text.trim().length > 0) {
-                     setMomentPosts(prev => prev.map(p => {
-                       if (p.id === targetPost.id) {
-                         return {
-                           ...p,
-                           comments: [...p.comments, {
-                             id: Date.now().toString() + Math.random().toString(36).substr(2,5),
-                             authorId: char.id,
-                             text: result.text.trim(),
-                             timestamp: Date.now()
-                           }]
-                         };
-                       }
-                       return p;
-                     }));
-                  }
-               } catch(e) {
-                 console.error("Auto moment comment failed", e);
-               }
-             }
-           }
-        }
-      }
-    };
-
-    const interval = setInterval(doAutoMoments, 60000);
+    const interval = setInterval(doAutoMoments, 1200000);
     return () => clearInterval(interval);
-  }, [characters, momentGroups, momentPosts, isLoaded]);
+  }, [characters, isLoaded]);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -3925,7 +3418,6 @@ const GardenApp = ({
         if (data.transactions) setTransactions(data.transactions);
         if (data.warehouseItems) setWarehouseItems(data.warehouseItems);
         if (data.gardenPatches) setGardenPatches(data.gardenPatches);
-        if (data.momentGroups) setMomentGroups(data.momentGroups);
         if (data.momentPosts) setMomentPosts(data.momentPosts);
         if (data.receivedGifts) setReceivedGifts(data.receivedGifts);
         if (data.letters) setLetters(data.letters);
@@ -4037,8 +3529,6 @@ const GardenApp = ({
       transactions,
       warehouseItems,
       gardenPatches,
-      momentGroups,
-      momentPosts,
       receivedGifts,
       letters,
       aiSettings,
@@ -4066,8 +3556,6 @@ const GardenApp = ({
     wheelSpins,
     lastWheelReset,
     wheelRewards,
-    momentGroups,
-    momentPosts,
     receivedGifts,
     letters,
     aiSettings,
@@ -4155,7 +3643,7 @@ const handleSendMessage = async (text?: string | string[]) => {
     const walletContext = mentionsGift ? `\n\n目前你的錢包裡有 $${character.walletBalance || 0}。如果你想買禮物送給使用者，請在回覆訊息的開頭加上「[贈送禮物] <禮物名稱> <圖標>」。` : "";
 
     setCharacters(prev => prev.map(c => 
-      c.id === character.id ? { ...c, messages: currentHistory, lastInteractionTime: Date.now() } : c
+      c.id === character.id ? { ...c, messages: [...c.messages, ...userMsgs], lastInteractionTime: Date.now() } : c
     ));
     
     if (typeof text === 'string') setInput('');
@@ -4385,7 +3873,6 @@ ${memoContext}${replyContext}${walletContext}
       case 'game': return '#6366f1';
       case 'wheel': return '#FF9500';
       case 'dex': return '#FF2D55';
-      case 'moments': return '#34C759';
       default: return '#AEAEB2';
     }
   };
@@ -4406,7 +3893,6 @@ ${memoContext}${replyContext}${walletContext}
       case 'game': return <Gamepad2 className={iconColorClass} size={30} />;
       case 'wheel': return <Disc className={iconColorClass} size={30} />;
       case 'dex': return <BookOpen className={iconColorClass} size={30} />;
-      case 'moments': return <Camera className={iconColorClass} size={30} />;
       default: return <Smartphone className={iconColorClass} size={30} />;
     }
   };
@@ -6452,8 +5938,6 @@ if (settingsSubPage === 'ai-config' as any) return (
       case 'characters': return renderCharacters();
       case 'wheel': return renderWheelApp();
       case 'moments': return <MomentsApp 
-        momentGroups={momentGroups} setMomentGroups={setMomentGroups}
-        momentPosts={momentPosts} setMomentPosts={setMomentPosts}
         characters={characters} userProfile={userProfile}
         isDarkMode={isDarkMode} goHome={goHome} 
       />;
