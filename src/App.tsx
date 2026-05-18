@@ -2238,11 +2238,11 @@ const [aiSettings, setAiSettings] = useState<AISettings>({
     const data = await response.json();
     return data.choices[0].message.content;
 
-catch (error: any) {
-    // 如果是網路連線斷掉等其他問題，也可以考慮是否重試
-    if (retryCount < 2 && error.message.includes('fetch')) {
-       await new Promise(r => setTimeout(r, 2000));
-       return callUniversalAI(history, systemPrompt, retryCount + 1);
+    } catch (error: any) {
+      // 如果是網路連線斷掉等其他問題，也可以考慮是否重試
+      if (retryCount < 2 && error.message.includes('fetch')) {
+        await new Promise(r => setTimeout(r, 2000));
+        return callUniversalAI(history, systemPrompt, retryCount + 1);
     }
     throw error;
   }
