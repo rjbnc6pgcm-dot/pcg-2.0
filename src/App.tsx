@@ -3559,7 +3559,7 @@ const renderSettings = () => {
                   {isFetchingModels ? '抓取中...' : '抓取模型清单'}
                 </button>
                 <div>
-                  <label className="text-[10px] font-bold opacity-30 block mb-1 uppercase tracking-widest">選擇模型</label>
+                  <label className="text-[10px] font-bold opacity-30 block mb-1 uppercase tracking-widest">选择模型</label>
                   <select className="w-full bg-transparent outline-none text-sm border-b border-neutral-500/10 pb-1" value={aiSettings.model} onChange={e => setAiSettings({...aiSettings, model: e.target.value})}>
                     {availableModels.map(m => <option key={m} value={m} className="text-black">{m}</option>)}
                     {availableModels.length === 0 && <option value={aiSettings.model}>{aiSettings.model}</option>}
@@ -3577,7 +3577,7 @@ const renderSettings = () => {
                     </div>
                     <div className="flex-1">
                       <input className="font-bold text-sm bg-transparent outline-none w-full" value={appNames[appId] || appId} onChange={e => setAppNames({...appNames, [appId]: e.target.value})} />
-                      <div className="text-[10px] text-[#76DE84] font-medium">點擊圖示更換照片</div>
+                      <div className="text-[10px] text-[#76DE84] font-medium">点击图式更换照片</div>
                     </div>
                   </div>
                 ))}
@@ -3587,8 +3587,8 @@ const renderSettings = () => {
             {settingsTab === 'appearance' && (
               <div className="space-y-8">
                 <div className="grid grid-cols-2 gap-4">
-                  <WallpaperThumb label="鎖定畫面" src={lockWallpaper} onClick={() => handleImageUpload(url => setLockWallpaper(url))} />
-                  <WallpaperThumb label="主畫面" src={homeWallpaper} onClick={() => handleImageUpload(url => setHomeWallpaper(url))} />
+                  <WallpaperThumb label="锁定画面" src={lockWallpaper} onClick={() => handleImageUpload(url => setLockWallpaper(url))} />
+                  <WallpaperThumb label="主画面" src={homeWallpaper} onClick={() => handleImageUpload(url => setHomeWallpaper(url))} />
                 </div>
                 <div className={`rounded-2xl overflow-hidden divide-y ${isDarkMode ? 'bg-[#1c1c1e] divide-white/5' : 'bg-white divide-neutral-100 shadow-sm'}`}>
                    <div className="px-5 py-4 flex items-center justify-between">
@@ -3598,7 +3598,7 @@ const renderSettings = () => {
                      </button>
                    </div>
                    <div className="px-5 py-4 flex items-center justify-between">
-                     <span className="text-sm font-medium">沉浸式全螢幕</span>
+                     <span className="text-sm font-medium">全屏模式</span>
                      <button onClick={() => setIsFullScreen(!isFullScreen)} className={`w-12 h-6 rounded-full relative transition-colors ${isFullScreen ? 'bg-[#76DE84]' : 'bg-neutral-300'}`}>
                        <motion.div animate={{ x: isFullScreen ? 24 : 4 }} className="absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm" />
                      </button>
@@ -3611,13 +3611,13 @@ const renderSettings = () => {
               <div className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
                   <button onClick={handleExportSave} className={`flex flex-col items-center gap-3 p-6 rounded-[32px] ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white shadow-sm'}`}>
-                    <Download className="text-blue-500" size={28} /><span className="font-bold text-xs">導出存檔</span>
+                    <Download className="text-blue-500" size={28} /><span className="font-bold text-xs">导出存档</span>
                   </button>
                   <button onClick={handleImportSave} className={`flex flex-col items-center gap-3 p-6 rounded-[32px] ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white shadow-sm'}`}>
-                    <Upload className="text-emerald-500" size={28} /><span className="font-bold text-xs">導入存檔</span>
+                    <Upload className="text-emerald-500" size={28} /><span className="font-bold text-xs">导入存档</span>
                   </button>
                 </div>
-                <button onClick={() => { if(confirm("確定重置？")) { localStorage.clear(); location.reload(); }}} className="w-full py-4 text-red-500 font-bold">重置所有玩家資料</button>
+                <button onClick={() => { if(confirm("确定重制？")) { localStorage.clear(); location.reload(); }}} className="w-full py-4 text-red-500 font-bold">重制所有玩家资料</button>
               </div>
             )}
           </div>
@@ -3636,15 +3636,15 @@ const renderSettings = () => {
             </div>
             <div className="flex-1 min-w-0">
               <h3 className="font-bold text-lg leading-tight truncate">{userProfile.name}</h3>
-              <p className="text-xs opacity-50 truncate">{userProfile.gender} · {userProfile.age}歲 · {userProfile.signature}</p>
+              <p className="text-xs opacity-50 truncate">{userProfile.gender} · {userProfile.age}岁 · {userProfile.signature}</p>
             </div>
             <ChevronRight size={20} className="opacity-20" />
           </div>
           <div className={`rounded-2xl overflow-hidden divide-y ${isDarkMode ? 'bg-[#1c1c1e] divide-white/5' : 'bg-white divide-neutral-100 shadow-sm'}`}>
-            <SettingsRow icon={<Key size={18} color="white" />} iconBg="#8E8E93" label="AI 助手與 API 設定" onClick={() => setSettingsTab('aiConfig')} />
-            <SettingsRow icon={<Grid size={18} color="white" />} iconBg="#AF52DE" label="更換圖示與名稱" onClick={() => setSettingsTab('icons')} />
-            <SettingsRow icon={<Image size={18} color="white" />} iconBg="#FF2D55" label="背景圖片與外觀" onClick={() => setSettingsTab('appearance')} />
-            <SettingsRow icon={<Download size={18} color="white" />} iconBg="#007AFF" label="資料管理與存檔" onClick={() => setSettingsTab('privacy')} />
+            <SettingsRow icon={<Key size={18} color="white" />} iconBg="#8E8E93" label="AI 助手与 API 设定" onClick={() => setSettingsTab('aiConfig')} />
+            <SettingsRow icon={<Grid size={18} color="white" />} iconBg="#AF52DE" label="更换图式与名称" onClick={() => setSettingsTab('icons')} />
+            <SettingsRow icon={<Image size={18} color="white" />} iconBg="#FF2D55" label="背景图片与外观" onClick={() => setSettingsTab('appearance')} />
+            <SettingsRow icon={<Download size={18} color="white" />} iconBg="#007AFF" label="资料管理与存档" onClick={() => setSettingsTab('privacy')} />
           </div>
         </div>
       </div>
@@ -3653,7 +3653,7 @@ const renderSettings = () => {
 
   const renderWheelApp = () => {
     const handleSpin = () => {
-      if (wheelSpins <= 0) { alert("今日次數已用完"); return; }
+      if (wheelSpins <= 0) { alert("今日次数已用完"); return; }
       if (isSpinning) return;
       setIsSpinning(true);
       setWheelSpins(prev => prev - 1);
@@ -3665,8 +3665,8 @@ const renderSettings = () => {
         const rewardIdx = Math.floor(((360 - actualDeg) % 360) / (360 / wheelRewards.length));
         const amount = wheelRewards[rewardIdx];
         setWalletBalance(prev => prev + amount);
-        addTransaction('income', amount, '每日轉盤獎勵');
-        alert(`獲得 $${amount}！`);
+        addTransaction('income', amount, '每日转盘奖励');
+        alert(`获得 $${amount}！`);
       }, 4000);
     };
     return (
@@ -3699,21 +3699,21 @@ const renderCharacters = () => {
       if (charTab === 'peeper') {
         return (
           <div className={`flex-1 flex flex-col h-full ${isDarkMode ? 'bg-black text-white' : 'bg-[#f2f2f7] text-black'} overflow-y-auto`}>
-            <Header title="偷窺者模式" onBack={() => setCharTab('edit')} isDarkMode={isDarkMode} />
+            <Header title="偷窥者模式" onBack={() => setCharTab('edit')} isDarkMode={isDarkMode} />
             <div className="p-6 space-y-6 pb-20">
               <div className={`p-8 rounded-[40px] text-center space-y-4 ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white shadow-xl'} border ${isDarkMode ? 'border-white/5' : 'border-neutral-100'}`}>
                 <div className="w-20 h-20 rounded-full overflow-hidden mx-auto border-4 border-[#5856D6] shadow-lg">
                   <AvatarImage src={char.avatar} />
                 </div>
-                <h4 className="font-black text-xl">{char.name} 的隱私錢包</h4>
+                <h4 className="font-black text-xl">{char.name} 的隐私钱包</h4>
                 <div className="text-5xl font-black text-[#5856D6] tracking-tighter">${char.walletBalance || 0}</div>
-                <p className="text-[10px] font-bold opacity-30 uppercase tracking-widest">存取權限已授權</p>
+                <p className="text-[10px] font-bold opacity-30 uppercase tracking-widest">存取权限已授权</p>
               </div>
               <div className="space-y-3">
-                <h5 className="text-xs font-bold opacity-40 uppercase px-2">近期動態紀錄</h5>
+                <h5 className="text-xs font-bold opacity-40 uppercase px-2">近期动态纪录</h5>
                 <div className={`rounded-2xl p-4 space-y-3 ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white shadow-sm'}`}>
                   {char.activityLogs?.map((log, i) => <div key={i} className="text-xs opacity-70 border-l-2 border-[#76DE84] pl-3 py-1">{log}</div>)}
-                  {(!char.activityLogs || char.activityLogs.length === 0) && <p className="text-center opacity-30 py-4 italic">暫無紀錄</p>}
+                  {(!char.activityLogs || char.activityLogs.length === 0) && <p className="text-center opacity-30 py-4 italic">暂无纪录</p>}
                 </div>
               </div>
             </div>
@@ -3723,33 +3723,33 @@ const renderCharacters = () => {
 
       return (
         <div className={`flex-1 flex flex-col h-full ${isDarkMode ? 'bg-black text-white' : 'bg-[#f2f2f7] text-black'} overflow-y-auto pb-20`}>
-          <Header title={`編輯 ${char.name}`} onBack={() => { setEditingCharId(null); setCharTab('list'); }} isDarkMode={isDarkMode} />
+          <Header title={`编辑 ${char.name}`} onBack={() => { setEditingCharId(null); setCharTab('list'); }} isDarkMode={isDarkMode} />
           <div className="p-4 space-y-6">
             <div className="flex flex-col items-center gap-2">
               <div onClick={() => handleImageUpload(u => update('avatar', u))} className="w-20 h-20 rounded-full overflow-hidden border-4 border-white shadow-lg cursor-pointer relative group">
                 <AvatarImage src={char.avatar} className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white"><CameraIcon size={20} /></div>
               </div>
-              <span className="text-[10px] font-bold opacity-40 uppercase">點擊更換照片</span>
+              <span className="text-[10px] font-bold opacity-40 uppercase">点击更换照片</span>
             </div>
             <div className={`rounded-xl overflow-hidden divide-y ${isDarkMode ? 'bg-[#1c1c1e] divide-white/5' : 'bg-white shadow-sm'}`}>
               <ProfileInput label="姓名" value={char.name} isDark={isDarkMode} onChange={(v:any) => update('name', v)} />
-              <ProfileInput label="暱稱" value={char.charNickname} isDark={isDarkMode} onChange={(v:any) => update('charNickname', v)} />
-              <ProfileInput label="地點" value={char.location} isDark={isDarkMode} onChange={(v:any) => update('location', v)} />
-              <ProfileInput label="簽名" value={char.signature} isDark={isDarkMode} onChange={(v:any) => update('signature', v)} />
+              <ProfileInput label="昵称" value={char.charNickname} isDark={isDarkMode} onChange={(v:any) => update('charNickname', v)} />
+              <ProfileInput label="地点" value={char.location} isDark={isDarkMode} onChange={(v:any) => update('location', v)} />
+              <ProfileInput label="签名" value={char.signature} isDark={isDarkMode} onChange={(v:any) => update('signature', v)} />
             </div>
             <div className="space-y-2">
-              <label className="text-xs font-bold opacity-40 px-2 uppercase">行為自動化開關</label>
+              <label className="text-xs font-bold opacity-40 px-2 uppercase">行为自动化开关</label>
               <div className={`rounded-xl divide-y ${isDarkMode ? 'bg-[#1c1c1e] divide-white/5' : 'bg-white shadow-sm'}`}>
-                <div className="px-5 py-3 flex justify-between items-center text-sm"><span>自動釣魚</span><input type="checkbox" checked={char.proactiveFishing} onChange={e => update('proactiveFishing', e.target.checked)} /></div>
-                <div className="px-5 py-3 flex justify-between items-center text-sm"><span>自動售魚</span><input type="checkbox" checked={char.autoSellFish} onChange={e => update('autoSellFish', e.target.checked)} /></div>
-                <div className="px-5 py-3 flex justify-between items-center text-sm"><span>自動澆水</span><input type="checkbox" checked={char.proactiveGarden} onChange={e => update('proactiveGarden', e.target.checked)} /></div>
+                <div className="px-5 py-3 flex justify-between items-center text-sm"><span>自动钓鱼</span><input type="checkbox" checked={char.proactiveFishing} onChange={e => update('proactiveFishing', e.target.checked)} /></div>
+                <div className="px-5 py-3 flex justify-between items-center text-sm"><span>自动售鱼</span><input type="checkbox" checked={char.autoSellFish} onChange={e => update('autoSellFish', e.target.checked)} /></div>
+                <div className="px-5 py-3 flex justify-between items-center text-sm"><span>自动浇水</span><input type="checkbox" checked={char.proactiveGarden} onChange={e => update('proactiveGarden', e.target.checked)} /></div>
               </div>
             </div>
             <button onClick={() => setCharTab('peeper')} className="w-full py-4 bg-[#5856D6] text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95">
-              <Eye size={20} /> 進入偷窺者模式
+              <Eye size={20} /> 进入偷窥者模式
             </button>
-            <button onClick={() => {if(confirm("刪除？")){setCharacters(prev => prev.filter(c => c.id !== char.id)); setEditingCharId(null);}}} className="w-full py-4 text-red-500 font-bold bg-red-500/5 rounded-2xl">刪除角色</button>
+            <button onClick={() => {if(confirm("删除？")){setCharacters(prev => prev.filter(c => c.id !== char.id)); setEditingCharId(null);}}} className="w-full py-4 text-red-500 font-bold bg-red-500/5 rounded-2xl">删除角色</button>
           </div>
         </div>
       );
@@ -3761,7 +3761,7 @@ const renderCharacters = () => {
           <span className="text-3xl font-black text-[#76DE84]">CHARACTERS</span>
           <button onClick={() => {
             const newId = Date.now().toString();
-            setCharacters([...characters, { id: newId, name: '新角色', avatar: getRandomAnimalEmoji(), messages: [], favorability: 0, walletBalance: 300, location: '未設定', activityLogs: [] } as any]);
+            setCharacters([...characters, { id: newId, name: '新角色', avatar: getRandomAnimalEmoji(), messages: [], favorability: 0, walletBalance: 300, location: '未设定', activityLogs: [] } as any]);
             setEditingCharId(newId); setCharTab('edit');
           }} className="w-10 h-10 rounded-full bg-[#76DE84] text-white flex items-center justify-center shadow-lg active:scale-90 transition-transform"><Plus size={24} /></button>
         </div>
@@ -3796,7 +3796,7 @@ const renderCharacters = () => {
       case 'photos': return <MailboxApp isDarkMode={isDarkMode} goHome={goHome} letters={letters} setLetters={setLetters} characters={characters} userProfile={userProfile} />;
       case 'dex': return <DexApp isDarkMode={isDarkMode} goHome={goHome} />;
       case 'moments': return <MomentsApp momentGroups={momentGroups} setMomentGroups={setMomentGroups} momentPosts={momentPosts} setMomentPosts={setMomentPosts} characters={characters} userProfile={userProfile} isDarkMode={isDarkMode} goHome={goHome} />;
-      default: return <div className="p-20 text-center">App 內容載入中...</div>;
+      default: return <div className="p-20 text-center">App 内容载入中...</div>;
     }
   };
 
@@ -3807,7 +3807,7 @@ const renderCharacters = () => {
         if (isChatConfigOpen && char) {
           return (
             <div className={`flex-1 flex flex-col h-full ${isDarkMode ? 'bg-black text-white' : 'bg-[#f2f2f7] text-black'}`}>
-              <Header title={`${char.name} 聊天設定`} onBack={() => { setIsChatConfigOpen(false); setPreviewChatBg(null); }} isDarkMode={isDarkMode} />
+              <Header title={`${char.name} 聊天设定`} onBack={() => { setIsChatConfigOpen(false); setPreviewChatBg(null); }} isDarkMode={isDarkMode} />
               <div className="p-4 space-y-6 overflow-y-auto">
                 <div className="flex flex-col items-center gap-4 py-6">
                   <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-lg">
@@ -3822,13 +3822,13 @@ const renderCharacters = () => {
                 <div className={`${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white'} rounded-2xl p-5 space-y-6 shadow-sm border ${isDarkMode ? 'border-[#38383a]' : 'border-neutral-100'}`}>
                   <div className="space-y-4">
                     <div className="flex justify-between items-center text-sm font-bold opacity-60 uppercase tracking-widest px-1">
-                      <span>回覆速度調整</span>
+                      <span>回复速度调整</span>
                       <Sparkles size={14} />
                     </div>
                     
                     <div className="space-y-2">
                     <div className="flex justify-between text-xs font-medium">
-                      <span>最快回覆時間</span>
+                      <span>最快回复时间</span>
                       <span className="text-[#76DE84] font-bold">{char.minResponseTime}s</span>
                     </div>
                     <input 
@@ -3844,7 +3844,7 @@ const renderCharacters = () => {
 
                     <div className="space-y-2">
                     <div className="flex justify-between text-xs font-medium">
-                      <span>最慢回覆時間</span>
+                      <span>最慢回复时间</span>
                       <span className="text-[#76DE84] font-bold">{char.maxResponseTime}s</span>
                     </div>
                     <input 
@@ -3861,12 +3861,12 @@ const renderCharacters = () => {
 
                   <div className="space-y-4 pt-4 border-t border-neutral-100/10">
                     <div className="flex justify-between items-center text-sm font-bold opacity-60 uppercase tracking-widest px-1">
-                      <span>訊息連續傳送上限</span>
+                      <span>讯息连续传送上线</span>
                       <MessageCircle size={14} />
                     </div>
                     <div className="flex justify-between text-xs font-medium">
-                      <span>一次最多可傳幾條</span>
-                      <span className="text-[#76DE84] font-bold">{char.maxMessagesPerTurn} 條</span>
+                      <span>一次最多可传几条</span>
+                      <span className="text-[#76DE84] font-bold">{char.maxMessagesPerTurn} 条</span>
                     </div>
                     <input 
                       type="range" min="1" max="8" 
@@ -3877,17 +3877,17 @@ const renderCharacters = () => {
                       }}
                       className="w-full h-2 bg-neutral-200 dark:bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-[#76DE84]"
                     />
-                    <p className="text-[10px] opacity-40 text-center italic mt-2">設定越高，角色一次傳來的短句就越多</p>
+                    <p className="text-[10px] opacity-40 text-center italic mt-2">设定越高，角色一次传来的短句就越多</p>
                   </div>
 
                   <div className="space-y-4 pt-4 border-t border-neutral-100/10">
                     <div className="flex justify-between items-center text-sm font-bold opacity-60 uppercase tracking-widest px-1">
-                      <span>所在地更換頻率</span>
+                      <span>所在地更换频率</span>
                       <MapPin size={14} />
                     </div>
                     <div className="flex justify-between text-xs font-medium">
-                      <span>改變間隔</span>
-                      <span className="text-[#FF9500] font-bold">{char.locationInterval || 1} 小時</span>
+                      <span>改变间隔</span>
+                      <span className="text-[#FF9500] font-bold">{char.locationInterval || 1} 小时</span>
                     </div>
                     <input 
                       type="range" min="1" max="24" step="1"
@@ -3899,12 +3899,12 @@ const renderCharacters = () => {
 
                   <div className="space-y-4 pt-4 border-t border-neutral-100/10">
                     <div className="flex justify-between items-center text-sm font-bold opacity-60 uppercase tracking-widest px-1">
-                      <span>主動傳送訊息頻率</span>
+                      <span>主动传送讯息频率</span>
                       <Bot size={14} />
                     </div>
                     <div className="flex justify-between text-xs font-medium">
-                      <span>閒置多久後發送</span>
-                      <span className="text-blue-500 font-bold">{char.proactiveInterval ? `${char.proactiveInterval} 小時` : '已關閉'}</span>
+                      <span>闲置多久后发送</span>
+                      <span className="text-blue-500 font-bold">{char.proactiveInterval ? `${char.proactiveInterval} 小时` : '已关闭'}</span>
                     </div>
                     <input 
                       type="range" min="0" max="24" step="1"
@@ -3912,18 +3912,18 @@ const renderCharacters = () => {
                       onChange={(e) => setCharacters(prev => prev.map(c => c.id === char.id ? { ...c, proactiveInterval: parseInt(e.target.value) } : c))}
                       className="w-full h-2 bg-neutral-200 dark:bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
                     />
-                    <p className="text-[10px] opacity-40 text-center italic mt-2">當你長時間沒回話時，角色會主動傳訊息找你</p>
+                    <p className="text-[10px] opacity-40 text-center italic mt-2">當你长时间没回话时，角色会主动传讯息找你</p>
                   </div>
 
                   <div className="space-y-4 pt-4 border-t border-neutral-100/10">
                     <div className="flex justify-between items-center text-sm font-bold opacity-60 uppercase tracking-widest px-1">
-                      <span>自動參與 APP 互動</span>
+                      <span>自动参与 APP 互动</span>
                       <Activity size={14} />
                     </div>
                     <div className={`p-3 rounded-xl flex items-center justify-between ${isDarkMode ? 'bg-white/5' : 'bg-white shadow-sm'}`}>
                       <div className="flex flex-col">
-                        <span className="text-xs font-bold">參與釣魚互動</span>
-                        <span className="text-[10px] opacity-40 italic">允許角色在閒置時進入釣魚 APP</span>
+                        <span className="text-xs font-bold">参与钓鱼互动</span>
+                        <span className="text-[10px] opacity-40 italic">允许角色在闲置时进入钓鱼 APP</span>
                       </div>
                       <button 
                         onClick={() => setCharacters(prev => prev.map(c => c.id === char.id ? { ...c, proactiveFishing: !c.proactiveFishing } : c))}
