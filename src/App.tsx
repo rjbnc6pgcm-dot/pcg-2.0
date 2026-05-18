@@ -3358,152 +3358,147 @@ const [userProfile, setUserProfile] = useState<UserProfile>({
   };
 
   // --- 3. App 專用渲染函式 (恢復原本的精緻設計) ---
-  const renderMessagesApp = () => {
-    if (selectedChatId) {
-      const char = characters.find(c => c.id === selectedChatId);
-      if (!char) return null;
-      let myStyles: any = {}; let theirStyles: any = {};
-      try { char.myBubbleCss?.split(';').forEach(p => { if(p.includes(':')){ const [k,v] = p.split(':'); myStyles[k.trim().replace(/-([a-z])/g, g=>g[1].toUpperCase())] = v.trim(); }}); } catch(e){}
-      try { char.theirBubbleCss?.split(';').forEach(p => { if(p.includes(':')){ const [k,v] = p.split(':'); theirStyles[k.trim().replace(/-([a-z])/g, g=>g[1].toUpperCase())] = v.trim(); }}); } catch(e){}
+const renderMessagesApp = () => {
+  // 1. 如果正在編輯角色 (editingCharId 有值)
+  if (editingCharId) {
+    const char = characters.find(c => c.id === editingCharId);
+    if (!char) return null;
 
-      return (
-        <div className={`flex-1 flex flex-col h-full ${isDarkMode ? 'bg-[#1c1c1e] text-white' : 'bg-neutral-50 text-black'}`}>
-          <div className={`px-4 pt-16 pb-3 flex items-center border-b ${isDarkMode ? 'bg-[#1c1c1e]/80 border-[#38383a]' : 'bg-white/80 border-neutral-200'} backdrop-blur-md sticky top-0 z-10`}>
-            <button onClick={() => setSelectedChatId(null)} className="text-[#76DE84] flex items-center font-bold"><ChevronLeft size={20} /> 讯息</button>
-            <div className="flex-1 flex flex-col items-center mr-10">
-              <span className="font-bold">{char.name}</span><span className="text-[10px] text-[#76DE84]">在线上</span>
-            </div>
-          </div>
-          <div className="flex-1 overflow-y-auto p-4 space-y-4" style={char.chatBackground ? {backgroundImage: `url(${char.chatBackground})`, backgroundSize: 'cover', backgroundPosition: 'center'} : {}}>
-            {char.messages.map((m, i) => (
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div style={m.role === 'user' ? myStyles : theirStyles} className={`max-w-[75%] px-4 py-2 rounded-[20px] text-[15px] shadow-sm ${m.role === 'user' ? 'bg-[#007AFF] text-white' : (isDarkMode ? 'bg-[#2c2c2e]' : 'bg-white')}`}>
-                  {m.text}
-                </div>
-              </motion.div>
-            ))}
-            {typingChatId === char.id && <div className="text-[10px] opacity-40 ml-2 animate-pulse">{char.name} 正在输入...</div>}
-          </div>
-          <div className={`p-4 pb-10 flex gap-2 ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white'} border-t border-neutral-500/10`}>
-            <button onClick={() => alert("功能未开放")} className="text-neutral-400 p-2"><Smile size={24} /></button>
-            <input className={`flex-1 ${isDarkMode ? 'bg-black/40' : 'bg-neutral-100'} rounded-full px-4 py-2 text-sm outline-none`} placeholder="iMessage" onKeyDown={async e => {
-              if (e.key === 'Enter') {
-                const val = (e.target as HTMLInputElement).value; (e.target as HTMLInputElement).value = '';
-                const newMsgs = [...char.messages, { role: 'user', text: val } as Message];
-                setCharacters(prev => prev.map(c => c.id === char.id ? { ...c, messages: newMsgs } : c));
-                
-                // 隨機傳送多條訊息邏輯
-                setTypingChatId(char.id);
-                const reply = await callUniversalAI(newMsgs, char.settings);
-                const sentences = reply.split(/[。\n]/).filter(s => s.trim().length > 0).slice(0, char.maxMessagesPerTurn);
-                
-                let currentMsgs = newMsgs;
-                for (const s of sentences) {
-                  await new Promise(r => setTimeout(r, char.minResponseTime * 1000 + Math.random() * (char.maxResponseTime - char.minResponseTime) * 1000));
-                  currentMsgs = [...currentMsgs, { role: 'model', text: s.trim() } as Message];
-                  setCharacters(prev => prev.map(c => c.id === char.id ? { ...c, messages: currentMsgs } : c));
-                }
-                setTypingChatId(null);
-              }
-            }} />
-          </div>
-        </div>
-      );
-    }
+    // 這裡定義 update 輔助函式（假設你有這個邏輯）
+    const update = (field: string, value: any) => {
+      setCharacters(prev => prev.map(c => c.id === char.id ? { ...c, [field]: value } : c));
+    };
+
     return (
-      <div className={`flex-1 flex flex-col h-full ${isDarkMode ? 'bg-black text-white' : 'bg-white text-black'}`}>
-        <div className="px-6 pt-16 pb-3 text-3xl font-black">讯息</div>
-        <div className="flex-1 overflow-y-auto">
-          {characters.map(c => (
-            <div key={c.id} onClick={() => setSelectedChatId(c.id)} className={`px-4 py-4 flex items-center gap-4 border-b ${isDarkMode ? 'border-white/5' : 'border-neutral-50'} active:bg-neutral-50 cursor-pointer`}>
-              <div className="w-14 h-14 rounded-full overflow-hidden shrink-0 border border-neutral-100"><AvatarImage src={c.avatar} className="w-full h-full object-cover" /></div>
-              <div className="flex-1 min-w-0"><div className="font-bold flex justify-between"><span>{c.name}</span><span className="text-[10px] opacity-30 font-normal">现在</span></div><div className="text-sm opacity-50 truncate">{c.messages[c.messages.length-1]?.text || '点击开始聊天'}</div></div>
+      <div className={`flex-1 flex flex-col h-full ${isDarkMode ? 'bg-black text-white' : 'bg-[#f2f2f7] text-black'} overflow-y-auto pb-20`}>
+        <Header title={`编辑 ${char.name}`} onBack={() => { setEditingCharId(null); setCharTab('list'); }} isDarkMode={isDarkMode} />
+        <div className="p-4 space-y-6">
+          <div className="flex flex-col items-center gap-2">
+            <div onClick={() => handleImageUpload((u: string) => update('avatar', u))} className="w-20 h-20 rounded-full overflow-hidden border-4 border-white shadow-lg cursor-pointer relative group">
+              <AvatarImage src={char.avatar} className="w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white"><CameraIcon size={20} /></div>
             </div>
-          ))}
+            <span className="text-[10px] font-bold opacity-40 uppercase">点击更换头像</span>
+          </div>
+
+          <div className={`rounded-xl overflow-hidden divide-y ${isDarkMode ? 'bg-[#1c1c1e] divide-white/5' : 'bg-white shadow-sm'}`}>
+            <ProfileInput label="角色姓名" value={char.name} isDark={isDarkMode} onChange={(v: any) => update('name', v)} />
+            <ProfileInput label="妳对他的昵称" value={char.charNickname} isDark={isDarkMode} onChange={(v: any) => update('charNickname', v)} />
+            <ProfileInput label="性格签名" value={char.signature} isDark={isDarkMode} onChange={(v: any) => update('signature', v)} />
+            <ProfileInput label="出沒地点" value={char.location} isDark={isDarkMode} onChange={(v: any) => update('location', v)} />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs font-bold opacity-40 px-2 uppercase">行为自动化权限</label>
+            <div className={`rounded-xl divide-y ${isDarkMode ? 'bg-[#1c1c1e] divide-white/5' : 'bg-white shadow-sm'}`}>
+              <div className="px-5 py-3 flex justify-between items-center text-sm"><span>自动参与钓鱼</span><input type="checkbox" checked={char.proactiveFishing} onChange={e => update('proactiveFishing', e.target.checked)} className="accent-[#76DE84]" /></div>
+              <div className="px-5 py-3 flex justify-between items-center text-sm"><span>自动售出鱼货</span><input type="checkbox" checked={char.autoSellFish} onChange={e => update('autoSellFish', e.target.checked)} className="accent-[#76DE84]" /></div>
+              <div className="px-5 py-3 flex justify-between items-center text-sm"><span>自动浇水助手</span><input type="checkbox" checked={char.proactiveGarden} onChange={e => update('proactiveGarden', e.target.checked)} className="accent-[#76DE84]" /></div>
+              <div className="px-5 py-3 flex justify-between items-center text-sm"><span>允许向我转账</span><input type="checkbox" checked={char.canTransferToUser} onChange={e => update('canTransferToUser', e.target.checked)} className="accent-[#76DE84]" /></div>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <button onClick={() => setCharTab('peeper')} className="w-full py-4 bg-[#5856D6] text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-transform">
+              <Eye size={20} /> 进入偷窥者模式
+            </button>
+            <button onClick={() => { if (confirm("确定删除？")) { setCharacters(p => p.filter(c => c.id !== char.id)); setEditingCharId(null); } }} className="w-full py-4 text-red-500 font-bold bg-red-500/5 rounded-2xl">
+              删除角色伙伴
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
-      // --- 編輯角色分頁 ---
-      return (
-        <div className={`flex-1 flex flex-col h-full ${isDarkMode ? 'bg-black text-white' : 'bg-[#f2f2f7] text-black'} overflow-y-auto pb-20`}>
-          <Header title={`编辑 ${char.name}`} onBack={() => { setEditingCharId(null); setCharTab('list'); }} isDarkMode={isDarkMode} />
-          <div className="p-4 space-y-6">
-            <div className="flex flex-col items-center gap-2">
-              <div onClick={() => handleImageUpload(u => update('avatar', u))} className="w-20 h-20 rounded-full overflow-hidden border-4 border-white shadow-lg cursor-pointer relative group">
-                <AvatarImage src={char.avatar} className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white"><CameraIcon size={20} /></div>
-              </div>
-              <span className="text-[10px] font-bold opacity-40 uppercase">点击更换头像</span>
-            </div>
+  // 2. 如果正在聊天 (selectedChatId 有值)
+  if (selectedChatId) {
+    const char = characters.find(c => c.id === selectedChatId);
+    if (!char) return null;
+    let myStyles: any = {}; let theirStyles: any = {};
+    try { char.myBubbleCss?.split(';').forEach(p => { if (p.includes(':')) { const [k, v] = p.split(':'); myStyles[k.trim().replace(/-([a-z])/g, g => g[1].toUpperCase())] = v.trim(); } }); } catch (e) { }
+    try { char.theirBubbleCss?.split(';').forEach(p => { if (p.includes(':')) { const [k, v] = p.split(':'); theirStyles[k.trim().replace(/-([a-z])/g, g => g[1].toUpperCase())] = v.trim(); } }); } catch (e) { }
 
-            <div className={`rounded-xl overflow-hidden divide-y ${isDarkMode ? 'bg-[#1c1c1e] divide-white/5' : 'bg-white shadow-sm'}`}>
-              <ProfileInput label="角色姓名" value={char.name} isDark={isDarkMode} onChange={(v:any) => update('name', v)} />
-              <ProfileInput label="妳对他的昵称" value={char.charNickname} isDark={isDarkMode} onChange={(v:any) => update('charNickname', v)} />
-              <ProfileInput label="性格签名" value={char.signature} isDark={isDarkMode} onChange={(v:any) => update('signature', v)} />
-              <ProfileInput label="出沒地点" value={char.location} isDark={isDarkMode} onChange={(v:any) => update('location', v)} />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-bold opacity-40 px-2 uppercase">行为自动化权限</label>
-              <div className={`rounded-xl divide-y ${isDarkMode ? 'bg-[#1c1c1e] divide-white/5' : 'bg-white shadow-sm'}`}>
-                <div className="px-5 py-3 flex justify-between items-center text-sm"><span>自动参与钓鱼</span><input type="checkbox" checked={char.proactiveFishing} onChange={e => update('proactiveFishing', e.target.checked)} className="accent-[#76DE84]" /></div>
-                <div className="px-5 py-3 flex justify-between items-center text-sm"><span>自动售出鱼货</span><input type="checkbox" checked={char.autoSellFish} onChange={e => update('autoSellFish', e.target.checked)} className="accent-[#76DE84]" /></div>
-                <div className="px-5 py-3 flex justify-between items-center text-sm"><span>自动浇水助手</span><input type="checkbox" checked={char.proactiveGarden} onChange={e => update('proactiveGarden', e.target.checked)} className="accent-[#76DE84]" /></div>
-                <div className="px-5 py-3 flex justify-between items-center text-sm"><span>允许向我转账</span><input type="checkbox" checked={char.canTransferToUser} onChange={e => update('canTransferToUser', e.target.checked)} className="accent-[#76DE84]" /></div>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <button onClick={() => setCharTab('peeper')} className="w-full py-4 bg-[#5856D6] text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-transform">
-                <Eye size={20} /> 进入偷窥者模式
-              </button>
-              <button onClick={() => { if(confirm("确定删除？")) { setCharacters(p => p.filter(c => c.id !== char.id)); setEditingCharId(null); } }} className="w-full py-4 text-red-500 font-bold bg-red-500/5 rounded-2xl">
-                删除角色伙伴
-              </button>
-            </div>
+    return (
+      <div className={`flex-1 flex flex-col h-full ${isDarkMode ? 'bg-[#1c1c1e] text-white' : 'bg-neutral-50 text-black'}`}>
+        <div className={`px-4 pt-16 pb-3 flex items-center border-b ${isDarkMode ? 'bg-[#1c1c1e]/80 border-[#38383a]' : 'bg-white/80 border-neutral-200'} backdrop-blur-md sticky top-0 z-10`}>
+          <button onClick={() => setSelectedChatId(null)} className="text-[#76DE84] flex items-center font-bold"><ChevronLeft size={20} /> 讯息</button>
+          <div className="flex-1 flex flex-col items-center mr-10">
+            <span className="font-bold">{char.name}</span><span className="text-[10px] text-[#76DE84]">在线上</span>
           </div>
         </div>
-      );
-    }
-
-    // 2. 顯示角色列表主頁
-    return (
-      <div className={`flex-1 flex flex-col h-full ${isDarkMode ? 'bg-black text-white' : 'bg-[#f2f2f7] text-black'} overflow-y-auto pb-20`}>
-        <div className="px-6 pt-16 pb-3 flex justify-between items-center sticky top-0 z-10 bg-inherit backdrop-blur-md">
-          <span className="text-3xl font-black text-[#76DE84] tracking-tighter">CHARACTERS</span>
-          <button onClick={() => {
-            const newId = Date.now().toString();
-            const newCharObj: any = { 
-              id: newId, name: '新角色', avatar: getRandomAnimalEmoji(), 
-              messages: [], walletBalance: 300, favorability: 0, 
-              location: '学校、公园', proactiveFishing: true 
-            };
-            setCharacters([...characters, newCharObj]);
-            setEditingCharId(newId);
-            setCharTab('edit');
-          }} className="w-10 h-10 rounded-full bg-[#76DE84] text-white flex items-center justify-center shadow-lg active:scale-90 transition-transform">
-            <Plus size={24} />
-          </button>
-        </div>
-        <div className="p-4 space-y-3">
-          {characters.map(c => (
-            <div key={c.id} onClick={() => { setEditingCharId(c.id); setCharTab('edit'); }} className={`p-4 rounded-3xl flex items-center gap-4 ${isDarkMode ? 'bg-[#1c1c1e] border-white/5' : 'bg-white border-neutral-100'} border shadow-sm active:scale-95 transition-all cursor-pointer`}>
-              <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-white">
-                <AvatarImage src={c.avatar} className="w-full h-full object-cover" />
+        <div className="flex-1 overflow-y-auto p-4 space-y-4" style={char.chatBackground ? { backgroundImage: `url(${char.chatBackground})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}>
+          {char.messages.map((m, i) => (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div style={m.role === 'user' ? myStyles : theirStyles} className={`max-w-[75%] px-4 py-2 rounded-[20px] text-[15px] shadow-sm ${m.role === 'user' ? 'bg-[#007AFF] text-white' : (isDarkMode ? 'bg-[#2c2c2e]' : 'bg-white')}`}>
+                {m.text}
               </div>
-              <div className="flex-1">
-                <div className="font-bold text-lg">{c.name}</div>
-                <div className="text-xs opacity-50 italic truncate w-40">{c.signature || '暂无个性签名'}</div>
-              </div>
-              <div className="text-pink-500 font-black text-sm">❤️ {c.favorability}</div>
-            </div>
+            </motion.div>
           ))}
-          {characters.length === 0 && <div className="py-20 text-center text-neutral-400">目前沒有角色，点击 + 建立</div>}
+          {typingChatId === char.id && <div className="text-[10px] opacity-40 ml-2 animate-pulse">{char.name} 正在输入...</div>}
+        </div>
+        <div className={`p-4 pb-10 flex gap-2 ${isDarkMode ? 'bg-[#1c1c1e]' : 'bg-white'} border-t border-neutral-500/10`}>
+          <button onClick={() => alert("功能未开放")} className="text-neutral-400 p-2"><Smile size={24} /></button>
+          <input className={`flex-1 ${isDarkMode ? 'bg-black/40' : 'bg-neutral-100'} rounded-full px-4 py-2 text-sm outline-none`} placeholder="iMessage" onKeyDown={async e => {
+            if (e.key === 'Enter') {
+              const val = (e.target as HTMLInputElement).value; (e.target as HTMLInputElement).value = '';
+              const newMsgs = [...char.messages, { role: 'user', text: val } as Message];
+              setCharacters(prev => prev.map(c => c.id === char.id ? { ...c, messages: newMsgs } : c));
+
+              setTypingChatId(char.id);
+              const reply = await callUniversalAI(newMsgs, char.settings);
+              const sentences = reply.split(/[。\n]/).filter(s => s.trim().length > 0).slice(0, char.maxMessagesPerTurn);
+
+              let currentMsgs = newMsgs;
+              for (const s of sentences) {
+                await new Promise(r => setTimeout(r, char.minResponseTime * 1000 + Math.random() * (char.maxResponseTime - char.minResponseTime) * 1000));
+                currentMsgs = [...currentMsgs, { role: 'model', text: s.trim() } as Message];
+                setCharacters(prev => prev.map(c => c.id === char.id ? { ...c, messages: currentMsgs } : c));
+              }
+              setTypingChatId(null);
+            }
+          }} />
         </div>
       </div>
     );
+  }
+
+  // 3. 預設顯示：角色列表主頁
+  return (
+    <div className={`flex-1 flex flex-col h-full ${isDarkMode ? 'bg-black text-white' : 'bg-[#f2f2f7] text-black'} overflow-y-auto pb-20`}>
+      <div className="px-6 pt-16 pb-3 flex justify-between items-center sticky top-0 z-10 bg-inherit backdrop-blur-md">
+        <span className="text-3xl font-black text-[#76DE84] tracking-tighter">CHARACTERS</span>
+        <button onClick={() => {
+          const newId = Date.now().toString();
+          const newCharObj: any = {
+            id: newId, name: '新角色', avatar: getRandomEmoji(), // 修正了 getRandomAnimalEmoji 可能不存在的問題
+            messages: [], walletBalance: 300, favorability: 0,
+            location: '学校、公园', proactiveFishing: true
+          };
+          setCharacters([...characters, newCharObj]);
+          setEditingCharId(newId);
+          setCharTab('edit');
+        }} className="w-10 h-10 rounded-full bg-[#76DE84] text-white flex items-center justify-center shadow-lg active:scale-90 transition-transform">
+          <Plus size={24} />
+        </button>
+      </div>
+      <div className="p-4 space-y-3">
+        {characters.map(c => (
+          <div key={c.id} onClick={() => { setEditingCharId(c.id); setCharTab('edit'); }} className={`p-4 rounded-3xl flex items-center gap-4 ${isDarkMode ? 'bg-[#1c1c1e] border-white/5' : 'bg-white border-neutral-100'} border shadow-sm active:scale-95 transition-all cursor-pointer`}>
+            <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-white">
+              <AvatarImage src={c.avatar} className="w-full h-full object-cover" />
+            </div>
+            <div className="flex-1">
+              <div className="font-bold text-lg">{c.name}</div>
+              <div className="text-xs opacity-50 italic truncate w-40">{c.signature || '暂无个性签名'}</div>
+            </div>
+            <div className="text-pink-500 font-black text-sm">❤️ {c.favorability}</div>
+          </div>
+        ))}
+        {characters.length === 0 && <div className="py-20 text-center text-neutral-400">目前沒有角色，点击 + 建立</div>}
+      </div>
+    </div>
+  );
 };
 
 const renderSettings = () => {
