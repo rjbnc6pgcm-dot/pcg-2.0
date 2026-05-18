@@ -3365,10 +3365,6 @@ const GardenApp = ({
   // Persistence state
   const [isLoaded, setIsLoaded] = useState(false);
 
-    const interval = setInterval(doAutoMoments, 1200000);
-    return () => clearInterval(interval);
-  }, [characters, isLoaded]);
-
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
